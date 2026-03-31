@@ -43,24 +43,30 @@ export const usePianoSynth = (soundType: string = 'piano') => {
   }, [soundType]);
 
   // Initialize AudioContext lazily (needs user interaction)
-  const getAudioContext = useCallback(() => {
+  // Initialize/resume AudioContext. Await resume to ensure iOS unlocks audio
+  const getAudioContext = useCallback(async () => {
     if (!audioContextRef.current) {
       audioContextRef.current = new AudioContext();
       masterGainRef.current = audioContextRef.current.createGain();
       masterGainRef.current.gain.value = 0.5;
       masterGainRef.current.connect(audioContextRef.current.destination);
     }
-    
-    // Resume if suspended (autoplay policy)
+
+    // Resume if suspended (autoplay policy) and await it so resume() runs inside
+    // the user gesture that triggered play. This is required on iOS.
     if (audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume();
+      try {
+        await audioContextRef.current.resume();
+      } catch (e) {
+        // ignore resume failures — callers will handle absence of audio
+      }
     }
-    
+
     return audioContextRef.current;
   }, []);
 
   // Play a drum sound (or soundboard sound)
-  const playDrumSound = useCallback((note: string, velocity: number, ctx: AudioContext, masterGain: GainNode, isSoundBoard: boolean = false) => {
+  const playDrumSound = useCallback(async (note: string, velocity: number, ctx: AudioContext, masterGain: GainNode, isSoundBoard: boolean = false) => {
     const now = ctx.currentTime;
     const noteIndex = getNoteIndex(note);
     
@@ -197,8 +203,8 @@ export const usePianoSynth = (soundType: string = 'piano') => {
   }, []);
 
   // Play a note with velocity (0-1)
-  const playNote = useCallback((note: string, frequency: number, velocity: number = 0.7) => {
-    const ctx = getAudioContext();
+  const playNote = useCallback(async (note: string, frequency: number, velocity: number = 0.7) => {
+    const ctx = await getAudioContext();
     const masterGain = masterGainRef.current!;
     const now = ctx.currentTime;
     
@@ -211,7 +217,9 @@ export const usePianoSynth = (soundType: string = 'piano') => {
       if (activeNotesRef.current.has(note)) {
         stopNote(note);
       }
-      playDrumSound(note, velocity, ctx, masterGain, preset.isSoundBoard === true);
+      // playDrumSound is async but we don't need to await it here; resume() is
+      // already awaited above via getAudioContext so oscillators will play.
+      void playDrumSound(note, velocity, ctx, masterGain, preset.isSoundBoard === true);
       return;
     }
     

@@ -46,10 +46,11 @@ export const Piano: React.FC = () => {
   } = useRecorder();
 
   const handleNoteStart = useCallback(
-    (note: string, velocity: number) => {
+    async (note: string, velocity: number) => {
       const frequency = NOTE_FREQUENCIES[note];
       if (frequency) {
-        playNote(note, frequency, velocity);
+        // Ensure audio context resumes within the user gesture by awaiting playNote
+        await playNote(note, frequency, velocity);
         setPressedNotes((prev) => new Set(prev).add(note));
 
         // Record the note if recording
