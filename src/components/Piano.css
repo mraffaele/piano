@@ -1,0 +1,44 @@
+.piano-container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.piano {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, #2a2a2a 0%, #1a1a1a 100%);
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.black-key-container {
+  position: absolute;
+  top: 0;
+  width: calc(100% / 15 * 0.65);
+  height: 60%;
+  z-index: 10;
+}
+
+.black-key-container .key {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+/* Ensure white keys fill the container */
+.piano > .key.white-key {
+  flex: 1;
+  min-width: 0;
+}
