@@ -40,9 +40,11 @@
 }
 
 .key-label {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: clamp(8px, 1.5vw, 14px);
-  font-weight: 500;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Increased font size for better legibility on phones/tablets */
+  font-size: clamp(10px, 2.2vw, 18px);
+  font-weight: 600;
   padding-bottom: 8px;
   pointer-events: none;
 }
@@ -53,5 +55,5 @@
 
 .black-key .key-label {
   color: #ccc;
-  font-size: clamp(6px, 1.2vw, 11px);
+  font-size: clamp(9px, 1.8vw, 14px);
 }
