@@ -50,6 +50,11 @@ export const usePianoSynth = (soundType: string = 'piano') => {
       masterGainRef.current = audioContextRef.current.createGain();
       masterGainRef.current.gain.value = 0.5;
       masterGainRef.current.connect(audioContextRef.current.destination);
+
+      // Expose the AudioContext for debugging (inspect with remote Safari console)
+      try {
+        (window as any).__appAudio = audioContextRef.current;
+      } catch {}
     }
 
     // Resume if suspended (autoplay policy) and await it so resume() runs inside
@@ -383,7 +388,9 @@ export const usePianoSynth = (soundType: string = 'piano') => {
         stopNote(note);
       });
       if (audioContextRef.current) {
-        audioContextRef.current.close();
+        // Close and clear debug reference
+        try { audioContextRef.current.close(); } catch {}
+        try { (window as any).__appAudio = undefined; } catch {}
       }
     };
   }, [stopNote]);
