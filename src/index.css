@@ -66,19 +66,6 @@ body {
   touch-action: manipulation;
 }
 
-/* iOS Safari specific fixes */
-/* @supports (-webkit-touch-callout: none) {
-  body {
-    /* Fix for iOS viewport height */
-    height: -webkit-fill-available;
-  }
-
-  #root,
-  .app {
-    height: -webkit-fill-available;
-  }
-} */
-
 /* Safe area insets for iOS standalone PWA */
 :root {
   --safe-top: env(safe-area-inset-top);

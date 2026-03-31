@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Piano } from "./components/Piano";
+import RotateOverlay from "./components/RotateOverlay";
 import "./index.css";
 import { unlockAudio } from "./utils/unlockAudio";
 
@@ -43,7 +44,10 @@ function App() {
           </div>
         </div>
       ) : (
-        <Piano />
+        <>
+          <RotateOverlay />
+          <Piano />
+        </>
       )}
     </div>
   );

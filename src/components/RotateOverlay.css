@@ -1,0 +1,37 @@
+.rotate-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.8);
+  z-index: 9999;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.rotate-card {
+  text-align: center;
+  color: white;
+  padding: 22px 28px;
+  border-radius: 12px;
+  max-width: 320px;
+}
+
+.rotate-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  color: #ffd166;
+}
+
+.rotate-text {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.rotate-sub {
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+}
