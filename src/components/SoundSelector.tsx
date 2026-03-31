@@ -1,9 +1,5 @@
 import React, { useState } from "react";
-import {
-  SOUND_TYPES,
-  SOUND_CATEGORIES,
-  CATEGORY_NAMES,
-} from "../utils/soundTypes";
+import { SOUND_TYPES, SOUND_CATEGORIES } from "../utils/soundTypes";
 import "./SoundSelector.css";
 
 interface SoundSelectorProps {
