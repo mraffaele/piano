@@ -99,6 +99,25 @@ export const Piano: React.FC = () => {
     [playbackStopNote],
   );
 
+  // Listen for practice panel play/stop events and forward to playback handlers
+  React.useEffect(() => {
+    const onPracticePlay = (e: any) => {
+      const { note, freq, vel } = e.detail || {};
+      if (note && freq) handlePlaybackNoteStart(note, freq, vel ?? 0.8);
+    };
+    const onPracticeStop = (e: any) => {
+      const { note } = e.detail || {};
+      if (note) handlePlaybackNoteEnd(note);
+    };
+
+    window.addEventListener("practice:play", onPracticePlay as EventListener);
+    window.addEventListener("practice:stop", onPracticeStop as EventListener);
+    return () => {
+      window.removeEventListener("practice:play", onPracticePlay as EventListener);
+      window.removeEventListener("practice:stop", onPracticeStop as EventListener);
+    };
+  }, [handlePlaybackNoteEnd, handlePlaybackNoteStart]);
+
   const handlePlayTrack = useCallback(
     (id: string) => {
       const track = tracks.find((t) => t.id === id);
