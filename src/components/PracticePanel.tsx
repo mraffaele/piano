@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { NOTE_FREQUENCIES } from "../utils/noteFrequencies";
+import SONGS, { Song } from "../data/songs";
 import "./PracticePanel.css";
 
 interface Props {
@@ -8,52 +9,16 @@ interface Props {
   onStopNote?: (note: string) => void;
 }
 
-// Simple Twinkle Twinkle melody encoded in beats (quarter = 1 beat)
-const TWINKLE = {
-  id: "twinkle",
-  title: "Twinkle Twinkle",
-  tempo: 80, // bpm
-  events: [
-    // bar 1
-    { time: 0, note: "C4", dur: 1 },
-    { time: 1, note: "C4", dur: 1 },
-    { time: 2, note: "G4", dur: 1 },
-    { time: 3, note: "G4", dur: 1 },
-    // bar 2
-    { time: 4, note: "A4", dur: 1 },
-    { time: 5, note: "A4", dur: 1 },
-    { time: 6, note: "G4", dur: 2 },
-    // bar 3
-    { time: 8, note: "F4", dur: 1 },
-    { time: 9, note: "F4", dur: 1 },
-    { time: 10, note: "E4", dur: 1 },
-    { time: 11, note: "E4", dur: 1 },
-    // bar 4
-    { time: 12, note: "D4", dur: 1 },
-    { time: 13, note: "D4", dur: 1 },
-    { time: 14, note: "C4", dur: 2 },
-
-    // repeat (second phrase)
-    { time: 16, note: "C4", dur: 1 },
-    { time: 17, note: "C4", dur: 1 },
-    { time: 18, note: "G4", dur: 1 },
-    { time: 19, note: "G4", dur: 1 },
-    { time: 20, note: "A4", dur: 1 },
-    { time: 21, note: "A4", dur: 1 },
-    { time: 22, note: "G4", dur: 2 },
-    { time: 24, note: "F4", dur: 1 },
-    { time: 25, note: "F4", dur: 1 },
-    { time: 26, note: "E4", dur: 1 },
-    { time: 27, note: "E4", dur: 1 },
-    { time: 28, note: "D4", dur: 1 },
-    { time: 29, note: "D4", dur: 1 },
-    { time: 30, note: "C4", dur: 2 },
-  ],
-};
+// Song data is loaded from src/data/songs
 
 export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(false);
+  const [selectedSongId, setSelectedSongId] = useState<string>(
+    SONGS[0]?.id ?? "",
+  );
+  const currentSong: Song =
+    SONGS.find((s) => s.id === selectedSongId) || SONGS[0];
   const timeoutsRef = useRef<number[]>([]);
 
   const clearScheduled = () => {
@@ -64,11 +29,16 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
   const play = () => {
     if (playing) return;
     setPlaying(true);
-    const beatSeconds = 60 / TWINKLE.tempo;
 
     const schedule = () => {
-      TWINKLE.events.forEach((e) => {
-        const whenMs = e.time * beatSeconds * 1000;
+      const song = SONGS.find((s) => s.id === selectedSongId) || SONGS[0];
+      const events: Song["events"] = song.events;
+      const tempo = song.tempo;
+      // recompute beatSeconds in case tempo differs per song
+      const beatSecondsLocal = 60 / tempo;
+
+      events.forEach((e: Song["events"][0]) => {
+        const whenMs = e.time * beatSecondsLocal * 1000;
         const playId = window.setTimeout(() => {
           const freq = NOTE_FREQUENCIES[e.note];
           // dispatch a global event so Piano (sibling) can listen and play notes
@@ -94,16 +64,16 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
 
             if (onStopNote) onStopNote(e.note);
           },
-          whenMs + e.dur * beatSeconds * 1000,
+          whenMs + e.dur * beatSecondsLocal * 1000,
         );
         timeoutsRef.current.push(stopId);
       });
 
       // End of sequence
       const totalBeats = Math.max(
-        ...TWINKLE.events.map((ev) => ev.time + ev.dur),
+        ...events.map((ev: Song["events"][0]) => ev.time + ev.dur),
       );
-      const endMs = totalBeats * beatSeconds * 1000;
+      const endMs = totalBeats * beatSecondsLocal * 1000;
       const endId = window.setTimeout(() => {
         if (loop) {
           clearScheduled();
@@ -122,7 +92,9 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
     clearScheduled();
     setPlaying(false);
     // ensure any sounding notes are stopped
-    TWINKLE.events.forEach((e) => {
+    const song = SONGS.find((s) => s.id === selectedSongId) || SONGS[0];
+    const events: Song["events"] = song.events;
+    events.forEach((e: Song["events"][0]) => {
       window.dispatchEvent(
         new CustomEvent("practice:stop", { detail: { note: e.note } }),
       );
@@ -133,13 +105,30 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
   return (
     <div className="practice-panel">
       <div className="practice-header">
-        <strong>{TWINKLE.title}</strong>
+        <select
+          className="practice-song-select"
+          value={selectedSongId}
+          onChange={(e) => {
+            // stop current playback when switching songs
+            if (playing) stop();
+            setSelectedSongId(e.target.value);
+          }}
+          style={{ marginLeft: 8 }}
+        >
+          {SONGS.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.title}
+            </option>
+          ))}
+        </select>
         <div className="practice-controls">
-          <button onClick={play} disabled={playing}>
-            Play
-          </button>
-          <button onClick={stop} disabled={!playing}>
-            Stop
+          <button
+            onClick={() => {
+              if (playing) stop();
+              else play();
+            }}
+          >
+            {playing ? "Stop" : "Play"}
           </button>
         </div>
 
