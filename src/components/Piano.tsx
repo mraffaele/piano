@@ -179,11 +179,8 @@ export const Piano: React.FC = () => {
         onDelete={deleteTrack}
         onRename={renameTrack}
       />
-      {/*       
-      <SoundSelector
-        currentSound={soundType}
-        onSoundChange={setSoundType}
-      /> */}
+
+      <SoundSelector currentSound={soundType} onSoundChange={setSoundType} />
 
       <div className="piano-container" {...touchHandlers}>
         <div className="piano">
