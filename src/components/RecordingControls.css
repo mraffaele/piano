@@ -1,6 +1,6 @@
 .recording-controls {
   position: fixed;
-  top: 16px;
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -113,7 +113,7 @@
 
 .clear-icon::before,
 .clear-icon::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -135,7 +135,8 @@
 .recording-indicator,
 .playing-indicator,
 .unsaved-indicator {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 1px;
@@ -177,7 +178,7 @@
 }
 
 .save-icon::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -2px;
   left: 50%;
@@ -190,7 +191,7 @@
 }
 
 .save-icon::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 2px;
   left: 50%;
@@ -203,7 +204,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4);
   }
   50% {
@@ -212,7 +214,8 @@
 }
 
 @keyframes blink {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
