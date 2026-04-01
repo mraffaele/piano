@@ -27,6 +27,7 @@
 
 .practice-controls button {
   padding: 6px 10px;
+  height: 32px;
 }
 
 .practice-controls label {
@@ -50,6 +51,7 @@
 .practice-song-select {
   height: 32px;
   border: 0h;
-  padding: 0 24px 0 8px;
+  padding: 0 24px 0 16px;
   width: 300px;
+  color: black;
 }

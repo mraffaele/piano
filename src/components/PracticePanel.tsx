@@ -17,8 +17,6 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
   const [selectedSongId, setSelectedSongId] = useState<string>(
     SONGS[0]?.id ?? "",
   );
-  const currentSong: Song =
-    SONGS.find((s) => s.id === selectedSongId) || SONGS[0];
   const timeoutsRef = useRef<number[]>([]);
 
   const clearScheduled = () => {

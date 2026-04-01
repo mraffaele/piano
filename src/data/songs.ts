@@ -50,6 +50,39 @@ export const SONGS: Song[] = [
     ],
   },
   {
+    id: "old_macdonald",
+    title: "Old MacDonald",
+    tempo: 100,
+    events: [
+      { time: 0, note: "E4", dur: 1 },
+      { time: 1, note: "D4", dur: 1 },
+      { time: 2, note: "C4", dur: 1 },
+      { time: 3, note: "D4", dur: 1 },
+
+      { time: 4, note: "E4", dur: 1 },
+      { time: 5, note: "E4", dur: 1 },
+      { time: 6, note: "E4", dur: 2 },
+
+      { time: 8, note: "D4", dur: 1 },
+      { time: 9, note: "D4", dur: 1 },
+      { time: 10, note: "D4", dur: 2 },
+
+      { time: 12, note: "E4", dur: 1 },
+      { time: 13, note: "G4", dur: 1 },
+      { time: 14, note: "G4", dur: 2 },
+
+      { time: 16, note: "E4", dur: 1 },
+      { time: 17, note: "D4", dur: 1 },
+      { time: 18, note: "C4", dur: 2 },
+      // extra repeat/ending so the phrase doesn't end abruptly
+      { time: 20, note: "E4", dur: 1 },
+      { time: 21, note: "D4", dur: 1 },
+      { time: 22, note: "C4", dur: 1 },
+      { time: 23, note: "D4", dur: 1 },
+      { time: 24, note: "C4", dur: 4 },
+    ],
+  },
+  {
     id: "happy_birthday",
     title: "Happy Birthday",
     tempo: 80,
@@ -89,6 +122,121 @@ export const SONGS: Song[] = [
       { time: 14, note: "D4", dur: 2 },
       { time: 16, note: "E4", dur: 1 },
       { time: 17, note: "G4", dur: 2 },
+    ],
+  },
+  {
+    id: "perfect_ed_sheeran",
+    title: "Perfect (Ed Sheeran)",
+    tempo: 95,
+    events: [
+      // I found a love...
+      { time: 0, note: "E4", dur: 1 },
+      { time: 1, note: "G4", dur: 1 },
+      { time: 2, note: "A4", dur: 2 },
+      { time: 4, note: "G4", dur: 2 },
+
+      // For me...
+      { time: 6, note: "E4", dur: 1 },
+      { time: 7, note: "G4", dur: 1 },
+      { time: 8, note: "A4", dur: 2 },
+      { time: 10, note: "G4", dur: 2 },
+
+      // Darling just dive right in...
+      { time: 12, note: "E4", dur: 1 },
+      { time: 13, note: "G4", dur: 1 },
+      { time: 14, note: "A4", dur: 1 },
+      { time: 15, note: "C5", dur: 2 },
+      { time: 17, note: "B4", dur: 2 },
+
+      // Follow my lead...
+      { time: 19, note: "A4", dur: 1 },
+      { time: 20, note: "G4", dur: 1 },
+      { time: 21, note: "E4", dur: 2 },
+
+      // I found a girl...
+      { time: 23, note: "E4", dur: 1 },
+      { time: 24, note: "G4", dur: 1 },
+      { time: 25, note: "A4", dur: 2 },
+      { time: 27, note: "G4", dur: 2 },
+
+      // Beautiful and sweet...
+      { time: 29, note: "E4", dur: 1 },
+      { time: 30, note: "G4", dur: 1 },
+      { time: 31, note: "A4", dur: 2 },
+      { time: 33, note: "G4", dur: 2 },
+
+      // Ending phrase
+      { time: 35, note: "E4", dur: 1 },
+      { time: 36, note: "D4", dur: 1 },
+      { time: 37, note: "C4", dur: 3 },
+    ],
+  },
+  {
+    id: "dance_monkey",
+    title: "Dance Monkey (TONES AND I)",
+    tempo: 100,
+    events: [
+      // Dance for me, dance for me, dance for me, oh-oh-oh
+      { time: 0, note: "E4", dur: 1 },
+      { time: 1, note: "G4", dur: 1 },
+      { time: 2, note: "A4", dur: 2 },
+      { time: 4, note: "A4", dur: 1 },
+      { time: 5, note: "G4", dur: 1 },
+      { time: 6, note: "E4", dur: 2 },
+
+      { time: 8, note: "E4", dur: 1 },
+      { time: 9, note: "G4", dur: 1 },
+      { time: 10, note: "A4", dur: 2 },
+      { time: 12, note: "A4", dur: 1 },
+      { time: 13, note: "G4", dur: 1 },
+      { time: 14, note: "E4", dur: 2 },
+
+      // I've never seen anybody do the things you do before
+      { time: 16, note: "E4", dur: 1 },
+      { time: 17, note: "G4", dur: 1 },
+      { time: 18, note: "A4", dur: 1 },
+      { time: 19, note: "C5", dur: 2 },
+      { time: 21, note: "B4", dur: 1 },
+      { time: 22, note: "A4", dur: 1 },
+      { time: 23, note: "G4", dur: 2 },
+
+      // They say move for me...
+      { time: 25, note: "E4", dur: 1 },
+      { time: 26, note: "G4", dur: 1 },
+      { time: 27, note: "A4", dur: 2 },
+      { time: 29, note: "A4", dur: 1 },
+      { time: 30, note: "G4", dur: 1 },
+      { time: 31, note: "E4", dur: 3 },
+    ],
+  },
+  {
+    id: "someone_you_loved",
+    title: "Someone You Loved (Lewis Capaldi)",
+    tempo: 90,
+    events: [
+      // Opening phrase
+      { time: 0, note: "C4", dur: 2 },
+      { time: 2, note: "E4", dur: 2 },
+      { time: 4, note: "G4", dur: 2 },
+      { time: 6, note: "A4", dur: 2 },
+
+      // I’m going under...
+      { time: 8, note: "G4", dur: 2 },
+      { time: 10, note: "E4", dur: 2 },
+      { time: 12, note: "D4", dur: 2 },
+      { time: 14, note: "C4", dur: 2 },
+
+      // This all or nothing...
+      { time: 16, note: "C4", dur: 2 },
+      { time: 18, note: "E4", dur: 2 },
+      { time: 20, note: "G4", dur: 2 },
+      { time: 22, note: "A4", dur: 2 },
+
+      // Got me sleeping...
+      { time: 24, note: "G4", dur: 2 },
+      { time: 26, note: "E4", dur: 2 },
+      { time: 28, note: "D4", dur: 2 },
+      { time: 30, note: "C4", dur: 3 },
     ],
   },
 ];
