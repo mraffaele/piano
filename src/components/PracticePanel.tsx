@@ -14,7 +14,7 @@ interface Props {
 export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(false);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
   const [selectedSongId, setSelectedSongId] = useState<string>(
     SONGS[0]?.id ?? "",
   );
@@ -36,7 +36,7 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
       // recompute beatSeconds in case tempo differs per song
       const beatSecondsLocal = 60 / tempo;
       const FALL_MS = 1800; // visual fall duration in ms
-      const START_DELAY_MS = 500; // give animations a short lead-in so first note doesn't rush
+      const START_DELAY_MS = 1800; // give animations a short lead-in so first note doesn't rush
 
       events.forEach((e: Song["events"][0]) => {
         const whenMs = e.time * beatSecondsLocal * 1000 + START_DELAY_MS;
@@ -96,7 +96,7 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
       const totalBeats = Math.max(
         ...events.map((ev: Song["events"][0]) => ev.time + ev.dur),
       );
-       const endMs = totalBeats * beatSecondsLocal * 1000 + START_DELAY_MS;
+      const endMs = totalBeats * beatSecondsLocal * 1000 + START_DELAY_MS;
       const endId = window.setTimeout(() => {
         if (loop) {
           clearScheduled();
