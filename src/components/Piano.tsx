@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
+import { flushSync } from "react-dom";
 import { Key } from "./Key";
 import { RecordingControls } from "./RecordingControls";
 import { TrackList } from "./TrackList";
@@ -19,7 +20,9 @@ const BLACK_KEY_OFFSETS: Record<string, number> = {
 };
 
 export const Piano: React.FC = () => {
-  const [pressedNotes, setPressedNotes] = useState<Set<string>>(new Set());
+  // Track active play counts per note so overlapping plays of the same
+  // note don't prematurely clear the visual state when one instance stops.
+  const [pressedCounts, setPressedCounts] = useState<Record<string, number>>({});
   const [soundType, setSoundType] = useState<string>("piano");
   const [playbackSoundType, setPlaybackSoundType] = useState<string>("piano");
 
@@ -51,7 +54,11 @@ export const Piano: React.FC = () => {
       if (frequency) {
         // Ensure audio context resumes within the user gesture by awaiting playNote
         await playNote(note, frequency, velocity);
-        setPressedNotes((prev) => new Set(prev).add(note));
+        setPressedCounts((prev) => {
+          const next = { ...prev };
+          next[note] = (next[note] || 0) + 1;
+          return next;
+        });
 
         // Record the note if recording
         recordNoteStart(note, frequency, velocity);
@@ -64,9 +71,14 @@ export const Piano: React.FC = () => {
     (note: string) => {
       const frequency = NOTE_FREQUENCIES[note];
       stopNote(note);
-      setPressedNotes((prev) => {
-        const next = new Set(prev);
-        next.delete(note);
+      setPressedCounts((prev) => {
+        const next = { ...prev };
+        const current = next[note] || 0;
+        if (current <= 1) {
+          delete next[note];
+        } else {
+          next[note] = current - 1;
+        }
         return next;
       });
 
@@ -82,7 +94,11 @@ export const Piano: React.FC = () => {
   const handlePlaybackNoteStart = useCallback(
     (note: string, frequency: number, velocity: number) => {
       playbackPlayNote(note, frequency, velocity);
-      setPressedNotes((prev) => new Set(prev).add(note));
+      setPressedCounts((prev) => {
+        const next = { ...prev };
+        next[note] = (next[note] || 0) + 1;
+        return next;
+      });
     },
     [playbackPlayNote],
   );
@@ -90,10 +106,20 @@ export const Piano: React.FC = () => {
   const handlePlaybackNoteEnd = useCallback(
     (note: string) => {
       playbackStopNote(note);
-      setPressedNotes((prev) => {
-        const next = new Set(prev);
-        next.delete(note);
-        return next;
+      // Ensure the visual release is rendered immediately so rapid
+      // stop->play sequences (like in Practice playback) show a brief
+      // release between notes instead of being batched together.
+      flushSync(() => {
+        setPressedCounts((prev) => {
+          const next = { ...prev };
+          const current = next[note] || 0;
+          if (current <= 1) {
+            delete next[note];
+          } else {
+            next[note] = current - 1;
+          }
+          return next;
+        });
       });
     },
     [playbackStopNote],
@@ -138,14 +164,14 @@ export const Piano: React.FC = () => {
       stopRecording();
     } else if (recorderState === "playing") {
       stopPlayback();
-      // Clear any pressed notes when stopping playback
-      setPressedNotes(new Set());
+        // Clear any pressed notes when stopping playback
+        setPressedCounts({});
     }
   }, [recorderState, stopRecording, stopPlayback]);
 
   const handleStopPlayback = useCallback(() => {
     stopPlayback();
-    setPressedNotes(new Set());
+    setPressedCounts({});
   }, [stopPlayback]);
 
   const handleSaveTrack = useCallback(() => {
@@ -210,7 +236,7 @@ export const Piano: React.FC = () => {
               key={noteInfo.note}
               note={noteInfo.note}
               isBlack={false}
-              isPressed={pressedNotes.has(noteInfo.note)}
+               isPressed={Boolean(pressedCounts[noteInfo.note])}
               {...mouseHandlers}
             />
           ))}
@@ -227,7 +253,7 @@ export const Piano: React.FC = () => {
               <Key
                 note={noteInfo.note}
                 isBlack={true}
-                isPressed={pressedNotes.has(noteInfo.note)}
+                 isPressed={Boolean(pressedCounts[noteInfo.note])}
                 {...mouseHandlers}
               />
             </div>

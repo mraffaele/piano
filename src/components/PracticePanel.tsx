@@ -51,19 +51,29 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
         }, whenMs);
         timeoutsRef.current.push(playId);
 
-        const stopId = window.setTimeout(
-          () => {
-            // notify listeners that this note stopped
-            window.dispatchEvent(
-              new CustomEvent("practice:stop", {
-                detail: { note: e.note },
-              }),
-            );
-
-            if (onStopNote) onStopNote(e.note);
-          },
-          whenMs + e.dur * beatSecondsLocal * 1000,
+        // small visual gap to ensure a brief release between identical
+        // consecutive notes. Subtract a few milliseconds from the stop
+        // timeout so the visual "stop" fires slightly before the next
+        // "play" when notes repeat. Keep it small to avoid audible
+        // artifacts.
+        // Increased gap to make the visual release more noticeable for
+        // repeated identical notes. Adjust if needed (10-120ms range).
+        const VISUAL_GAP_MS = 60;
+        const stopTime = Math.max(
+          0,
+          whenMs + e.dur * beatSecondsLocal * 1000 - VISUAL_GAP_MS,
         );
+
+        const stopId = window.setTimeout(() => {
+          // notify listeners that this note stopped
+          window.dispatchEvent(
+            new CustomEvent("practice:stop", {
+              detail: { note: e.note },
+            }),
+          );
+
+          if (onStopNote) onStopNote(e.note);
+        }, stopTime);
         timeoutsRef.current.push(stopId);
       });
 
