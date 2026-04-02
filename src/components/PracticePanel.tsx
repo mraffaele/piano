@@ -14,6 +14,7 @@ interface Props {
 export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(false);
+  const [muted, setMuted] = useState(false);
   const [selectedSongId, setSelectedSongId] = useState<string>(
     SONGS[0]?.id ?? "",
   );
@@ -42,7 +43,7 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
           // dispatch a global event so Piano (sibling) can listen and play notes
           window.dispatchEvent(
             new CustomEvent("practice:play", {
-              detail: { note: e.note, freq, vel: 0.8 },
+              detail: { note: e.note, freq, vel: 0.8, muted },
             }),
           );
 
@@ -68,7 +69,7 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
           // notify listeners that this note stopped
           window.dispatchEvent(
             new CustomEvent("practice:stop", {
-              detail: { note: e.note },
+              detail: { note: e.note, muted },
             }),
           );
 
@@ -104,7 +105,7 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
     const events: Song["events"] = song.events;
     events.forEach((e: Song["events"][0]) => {
       window.dispatchEvent(
-        new CustomEvent("practice:stop", { detail: { note: e.note } }),
+        new CustomEvent("practice:stop", { detail: { note: e.note, muted } }),
       );
       if (onStopNote) onStopNote(e.note);
     });
@@ -117,9 +118,17 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
           className="practice-song-select"
           value={selectedSongId}
           onChange={(e) => {
-            // stop current playback when switching songs
-            if (playing) stop();
-            setSelectedSongId(e.target.value);
+            // If currently playing, stop and immediately restart with the
+            // newly selected song so the change takes effect right away.
+            const newId = e.target.value;
+            if (playing) {
+              stop();
+              setSelectedSongId(newId);
+              // small timeout to ensure stop takes effect before scheduling
+              setTimeout(() => play(), 10);
+            } else {
+              setSelectedSongId(newId);
+            }
           }}
           style={{ marginLeft: 8 }}
         >
@@ -144,9 +153,39 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
           <input
             type="checkbox"
             checked={loop}
-            onChange={(e) => setLoop(e.target.checked)}
+            onChange={(e) => {
+              const newVal = e.target.checked;
+              // If playing, restart immediately with new loop mode applied.
+              if (playing) {
+                stop();
+                setLoop(newVal);
+                setTimeout(() => play(), 10);
+              } else {
+                setLoop(newVal);
+              }
+            }}
           />{" "}
           Loop
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={muted}
+            onChange={(e) => {
+              const newVal = e.target.checked;
+              // If playing, restart immediately so mute state applies without
+              // requiring the user to press Play again.
+              if (playing) {
+                stop();
+                setMuted(newVal);
+                setTimeout(() => play(), 10);
+              } else {
+                setMuted(newVal);
+              }
+            }}
+          />
+          No sound
         </label>
       </div>
 

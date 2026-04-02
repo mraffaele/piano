@@ -128,12 +128,41 @@ export const Piano: React.FC = () => {
   // Listen for practice panel play/stop events and forward to playback handlers
   React.useEffect(() => {
     const onPracticePlay = (e: any) => {
-      const { note, freq, vel } = e.detail || {};
-      if (note && freq) handlePlaybackNoteStart(note, freq, vel ?? 0.8);
+      const { note, freq, vel, muted } = e.detail || {};
+      if (!note) return;
+
+      // Always update visuals so the user can follow the notes when muted.
+      setPressedCounts((prev) => {
+        const next = { ...prev };
+        next[note] = (next[note] || 0) + 1;
+        return next;
+      });
+
+      // Only trigger audio when not muted.
+      if (freq && !muted) {
+        playbackPlayNote(note, freq, vel ?? 0.8);
+      }
     };
+
     const onPracticeStop = (e: any) => {
-      const { note } = e.detail || {};
-      if (note) handlePlaybackNoteEnd(note);
+      const { note, muted } = e.detail || {};
+      if (!note) return;
+
+      // Always update visuals
+      flushSync(() => {
+        setPressedCounts((prev) => {
+          const next = { ...prev };
+          const current = next[note] || 0;
+          if (current <= 1) delete next[note];
+          else next[note] = current - 1;
+          return next;
+        });
+      });
+
+      // Stop audio only when not muted
+      if (!muted) {
+        playbackStopNote(note);
+      }
     };
 
     window.addEventListener("practice:play", onPracticePlay as EventListener);
@@ -142,7 +171,7 @@ export const Piano: React.FC = () => {
       window.removeEventListener("practice:play", onPracticePlay as EventListener);
       window.removeEventListener("practice:stop", onPracticeStop as EventListener);
     };
-  }, [handlePlaybackNoteEnd, handlePlaybackNoteStart]);
+  }, [playbackPlayNote, playbackStopNote]);
 
   const handlePlayTrack = useCallback(
     (id: string) => {
