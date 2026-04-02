@@ -23,6 +23,19 @@
   box-shadow: none;
 }
 
+/* Falling note style */
+.falling-note {
+  background: rgba(255, 209, 102, 0.95);
+  color: #111;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  transform: translate(-50%, 0);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  pointer-events: none;
+}
+
 .black-key-container {
   position: absolute;
   top: 0;

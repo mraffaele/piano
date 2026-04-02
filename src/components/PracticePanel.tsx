@@ -15,6 +15,7 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [showFalling, setShowFalling] = useState(false);
   const [selectedSongId, setSelectedSongId] = useState<string>(
     SONGS[0]?.id ?? "",
   );
@@ -35,9 +36,24 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
       const tempo = song.tempo;
       // recompute beatSeconds in case tempo differs per song
       const beatSecondsLocal = 60 / tempo;
+      const FALL_MS = 1800; // visual fall duration in ms
 
       events.forEach((e: Song["events"][0]) => {
         const whenMs = e.time * beatSecondsLocal * 1000;
+        // schedule visual start so the falling note has time to animate and
+        // land at the play time. If the note is too close, shorten duration.
+        if (showFalling) {
+          const visualDuration = Math.min(FALL_MS, whenMs);
+          const visualStartMs = Math.max(0, whenMs - visualDuration);
+          const visualId = window.setTimeout(() => {
+            window.dispatchEvent(
+              new CustomEvent("practice:visualStart", {
+                detail: { note: e.note, fallMs: visualDuration },
+              }),
+            );
+          }, visualStartMs);
+          timeoutsRef.current.push(visualId);
+        }
         const playId = window.setTimeout(() => {
           const freq = NOTE_FREQUENCIES[e.note];
           // dispatch a global event so Piano (sibling) can listen and play notes
@@ -187,6 +203,26 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
             }}
           />{" "}
           No sound
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={showFalling}
+            onChange={(e) => {
+              const newVal = e.target.checked;
+              // follow the same behaviour as mute/loop: if playing, restart
+              // so the visual state applies immediately.
+              if (playing) {
+                stop();
+                setShowFalling(newVal);
+                setTimeout(() => play(), 10);
+              } else {
+                setShowFalling(newVal);
+              }
+            }}
+          />{' '}
+          Show falling notes
         </label>
       </div>
 

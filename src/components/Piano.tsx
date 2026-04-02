@@ -20,6 +20,69 @@ const BLACK_KEY_OFFSETS: Record<string, number> = {
 };
 
 export const Piano: React.FC = () => {
+  // Map of key note -> DOM element for aligning falling notes
+  const keyRefs = React.useRef<Record<string, HTMLElement | null>>({});
+  const registerKeyRef = React.useCallback((note: string, el: HTMLElement | null) => {
+    keyRefs.current[note] = el;
+  }, []);
+
+  // Falling notes overlay container ref
+  const fallingContainerRef = React.useRef<HTMLDivElement | null>(null);
+
+  // Create and animate a falling note element that lands on the target key
+  const createAndAnimateFallingNote = React.useCallback((note: string, targetRect: DOMRect, fallMs: number) => {
+    const container = fallingContainerRef.current;
+    if (!container) return;
+
+    const el = document.createElement('div');
+    el.className = 'falling-note';
+    el.textContent = note.replace(/\d+$/, '');
+    el.style.position = 'absolute';
+    el.style.left = `${targetRect.left + targetRect.width / 2}px`;
+    el.style.top = `-40px`;
+    el.style.transform = 'translate(-50%, 0)';
+    el.style.willChange = 'transform, top';
+    container.appendChild(el);
+
+    // compute final Y relative to viewport and container
+    const containerRect = container.getBoundingClientRect();
+    const startY = -40 - containerRect.top;
+    const endY = targetRect.top - containerRect.top + (targetRect.height * 0.5);
+
+    // Use Web Animations API for precise timing
+    const anim = el.animate([
+      { transform: `translate(-50%, ${startY}px)`, opacity: 1 },
+      { transform: `translate(-50%, ${endY}px)`, opacity: 1 },
+    ], { duration: Math.max(0, fallMs), easing: 'linear' });
+
+    anim.onfinish = () => {
+      // brief landing effect
+      el.animate([
+        { transform: `translate(-50%, ${endY}px)` },
+        { transform: `translate(-50%, ${endY - 6}px)` },
+        { transform: `translate(-50%, ${endY}px)` },
+      ], { duration: 180, easing: 'ease-out' });
+      setTimeout(() => { el.remove(); }, 400);
+    };
+
+    // cleanup if needed after a max time
+    setTimeout(() => { if (el.parentElement) el.remove(); }, fallMs + 4000);
+  }, []);
+
+  // Listen for practice visual events to spawn falling notes
+  React.useEffect(() => {
+    const onVisualStart = (e: any) => {
+      const { note, fallMs } = e.detail || {};
+      if (!note) return;
+      const keyEl = keyRefs.current[note];
+      const container = fallingContainerRef.current;
+      if (!keyEl || !container) return;
+      const keyRect = keyEl.getBoundingClientRect();
+      createAndAnimateFallingNote(note, keyRect, fallMs ?? 1200);
+    };
+    window.addEventListener('practice:visualStart', onVisualStart as EventListener);
+    return () => window.removeEventListener('practice:visualStart', onVisualStart as EventListener);
+  }, [createAndAnimateFallingNote]);
   // Track active play counts per note so overlapping plays of the same
   // note don't prematurely clear the visual state when one instance stops.
   const [pressedCounts, setPressedCounts] = useState<Record<string, number>>({});
@@ -258,6 +321,8 @@ export const Piano: React.FC = () => {
       <SoundSelector currentSound={soundType} onSoundChange={setSoundType} />
 
       <div className="piano-container" {...touchHandlers}>
+        {/* Overlay for falling notes: positioned absolute to cover the piano area */}
+        <div ref={fallingContainerRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 50 }} />
         <div className="piano">
           {/* White keys */}
           {whiteKeys.map((noteInfo) => (
@@ -266,6 +331,7 @@ export const Piano: React.FC = () => {
               note={noteInfo.note}
               isBlack={false}
                isPressed={Boolean(pressedCounts[noteInfo.note])}
+              registerKeyRef={registerKeyRef}
               {...mouseHandlers}
             />
           ))}
@@ -283,6 +349,7 @@ export const Piano: React.FC = () => {
                 note={noteInfo.note}
                 isBlack={true}
                  isPressed={Boolean(pressedCounts[noteInfo.note])}
+                registerKeyRef={registerKeyRef}
                 {...mouseHandlers}
               />
             </div>
