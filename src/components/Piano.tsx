@@ -38,8 +38,9 @@ export const Piano: React.FC = () => {
     el.className = 'falling-note';
     // Visual indicator: larger circular dot (no text)
     el.style.position = 'absolute';
-    el.style.width = `44px`;
-    el.style.height = `44px`;
+    const NOTE_SIZE = 44; // px
+    el.style.width = `${NOTE_SIZE}px`;
+    el.style.height = `${NOTE_SIZE}px`;
     el.style.borderRadius = '50%';
     el.style.background = 'linear-gradient(180deg, #ffefc2 0%, #ffcf5c 100%)';
     el.style.boxShadow = '0 10px 30px rgba(255, 150, 0, 0.28), 0 2px 6px rgba(0,0,0,0.25)';
@@ -58,9 +59,12 @@ export const Piano: React.FC = () => {
     el.style.willChange = 'transform, top';
     container.appendChild(el);
 
-    // compute final Y inside the container so the note lands near the
-    // bottom of the key (closer to the key surface)
-    const endTop = targetRect.top - containerRect.top + targetRect.height * 0.88;
+    // compute landing zone and final Y inside the container so the note
+    // lands dead center of the landing zone, which is ~1.5x the note size.
+    const zoneHeight = Math.max(Math.round(NOTE_SIZE * 1.5), 28);
+    const zoneCenter = targetRect.top - containerRect.top + targetRect.height * 0.88;
+    const zoneTop = zoneCenter - zoneHeight / 2;
+    const endTop = zoneCenter - NOTE_SIZE / 2; // dot's top so its center is zoneCenter
     const deltaY = endTop - startTop;
 
     // Create a landing zone overlay at the target key so users can see
@@ -72,9 +76,8 @@ export const Piano: React.FC = () => {
     // the center. Use a taller, wider zone for clarity.
     const zoneWidth = Math.max(64, targetRect.width * 1.05);
     zone.style.width = `${zoneWidth}px`;
-    zone.style.height = `28px`;
+    zone.style.height = `${zoneHeight}px`;
     const zoneLeft = targetRect.left + targetRect.width / 2 - containerRect.left - zoneWidth / 2;
-    const zoneTop = endTop - 10; // slightly above the very bottom so it rests on key
     zone.style.left = `${zoneLeft}px`;
     zone.style.top = `${zoneTop}px`;
     zone.style.pointerEvents = 'none';

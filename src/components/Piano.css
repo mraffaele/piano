@@ -45,6 +45,9 @@
   backdrop-filter: blur(2px);
   box-shadow: 0 6px 18px rgba(0,0,0,0.16);
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .black-key-container {
