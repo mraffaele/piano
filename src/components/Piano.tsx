@@ -241,12 +241,10 @@ export const Piano: React.FC = () => {
       const { note, freq, vel, muted } = e.detail || {};
       if (!note) return;
 
-      // Always update visuals so the user can follow the notes when muted.
-      setPressedCounts((prev) => {
-        const next = { ...prev };
-        next[note] = (next[note] || 0) + 1;
-        return next;
-      });
+      // When practice playback triggers a note, we want the falling-note
+      // visuals but we DO NOT want to show the key "pressed" active state.
+      // The pressedCounts state is used for visual key highlighting when the
+      // user physically presses keys; avoid updating it for practice playback.
 
       // Only trigger audio when not muted.
       if (freq && !muted) {
@@ -258,16 +256,8 @@ export const Piano: React.FC = () => {
       const { note, muted } = e.detail || {};
       if (!note) return;
 
-      // Always update visuals
-      flushSync(() => {
-        setPressedCounts((prev) => {
-          const next = { ...prev };
-          const current = next[note] || 0;
-          if (current <= 1) delete next[note];
-          else next[note] = current - 1;
-          return next;
-        });
-      });
+      // For practice playback we do not update pressedCounts so the key
+      // active state is not shown. We still stop audio when appropriate.
 
       // Stop audio only when not muted
       if (!muted) {
