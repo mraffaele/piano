@@ -38,35 +38,64 @@ export const Piano: React.FC = () => {
     el.className = 'falling-note';
     el.textContent = note.replace(/\d+$/, '');
     el.style.position = 'absolute';
-    el.style.left = `${targetRect.left + targetRect.width / 2}px`;
-    el.style.top = `-40px`;
+    // Position relative to container
+    const containerRect = container.getBoundingClientRect();
+    const startTop = -40; // starting top inside container
+    const startLeft = targetRect.left + targetRect.width / 2 - containerRect.left;
+    el.style.left = `${startLeft}px`;
+    el.style.top = `${startTop}px`;
     el.style.transform = 'translate(-50%, 0)';
     el.style.willChange = 'transform, top';
     container.appendChild(el);
 
-    // compute final Y relative to viewport and container
-    const containerRect = container.getBoundingClientRect();
-    const startY = -40 - containerRect.top;
-    const endY = targetRect.top - containerRect.top + (targetRect.height * 0.5);
+    // compute final Y inside the container so the note lands near the
+    // bottom of the key (closer to the key surface)
+    const endTop = targetRect.top - containerRect.top + targetRect.height * 0.88;
+    const deltaY = endTop - startTop;
 
-    // Use Web Animations API for precise timing
+    // Create a landing zone overlay at the target key so users can see
+    // where the note will land.
+    const zone = document.createElement('div');
+    zone.className = 'landing-zone';
+    zone.style.position = 'absolute';
+    const zoneWidth = Math.max(24, targetRect.width * 0.9);
+    zone.style.width = `${zoneWidth}px`;
+    zone.style.height = `16px`;
+    const zoneLeft = targetRect.left + targetRect.width / 2 - containerRect.left - zoneWidth / 2;
+    const zoneTop = endTop - 10; // slightly above the very bottom so it rests on key
+    zone.style.left = `${zoneLeft}px`;
+    zone.style.top = `${zoneTop}px`;
+    zone.style.pointerEvents = 'none';
+    container.appendChild(zone);
+
+    // Animate the falling note from its start position down to the landing
+    // zone using a linear timing so the landing time matches audio.
     const anim = el.animate([
-      { transform: `translate(-50%, ${startY}px)`, opacity: 1 },
-      { transform: `translate(-50%, ${endY}px)`, opacity: 1 },
+      { transform: `translate(-50%, 0px)`, opacity: 1 },
+      { transform: `translate(-50%, ${deltaY}px)`, opacity: 1 },
     ], { duration: Math.max(0, fallMs), easing: 'linear' });
 
     anim.onfinish = () => {
-      // brief landing effect
+      // landing bounce for the falling note
       el.animate([
-        { transform: `translate(-50%, ${endY}px)` },
-        { transform: `translate(-50%, ${endY - 6}px)` },
-        { transform: `translate(-50%, ${endY}px)` },
-      ], { duration: 180, easing: 'ease-out' });
-      setTimeout(() => { el.remove(); }, 400);
+        { transform: `translate(-50%, ${deltaY}px)` },
+        { transform: `translate(-50%, ${deltaY - 8}px)` },
+        { transform: `translate(-50%, ${deltaY}px)` },
+      ], { duration: 220, easing: 'cubic-bezier(.2,.8,.3,1)' });
+
+      // Pulse the landing zone to make the landing point obvious
+      zone.animate([
+        { transform: 'scale(1)', opacity: 0.85 },
+        { transform: 'scale(1.08)', opacity: 1 },
+        { transform: 'scale(1)', opacity: 0.6 },
+      ], { duration: 300, easing: 'ease-out' });
+
+      setTimeout(() => { el.remove(); }, 500);
+      setTimeout(() => { zone.remove(); }, 700);
     };
 
     // cleanup if needed after a max time
-    setTimeout(() => { if (el.parentElement) el.remove(); }, fallMs + 4000);
+    setTimeout(() => { if (el.parentElement) el.remove(); if (zone.parentElement) zone.remove(); }, fallMs + 4000);
   }, []);
 
   // Listen for practice visual events to spawn falling notes

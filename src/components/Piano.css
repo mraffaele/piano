@@ -36,6 +36,16 @@
   pointer-events: none;
 }
 
+/* Landing zone highlights where the falling note will land */
+.landing-zone {
+  background: rgba(3, 169, 244, 0.14);
+  border: 1px solid rgba(3, 169, 244, 0.55);
+  border-radius: 8px;
+  backdrop-filter: blur(2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.16);
+  pointer-events: none;
+}
+
 .black-key-container {
   position: absolute;
   top: 0;
