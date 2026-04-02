@@ -25,6 +25,7 @@
 
 /* Falling note style */
 .falling-note {
+  /* fallback small style for non-js or before inline styles apply */
   background: rgba(255, 209, 102, 0.95);
   color: #111;
   padding: 6px 10px;

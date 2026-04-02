@@ -30,17 +30,27 @@ export const Piano: React.FC = () => {
   const fallingContainerRef = React.useRef<HTMLDivElement | null>(null);
 
   // Create and animate a falling note element that lands on the target key
-  const createAndAnimateFallingNote = React.useCallback((note: string, targetRect: DOMRect, fallMs: number) => {
+  const createAndAnimateFallingNote = React.useCallback((_note: string, targetRect: DOMRect, fallMs: number) => {
     const container = fallingContainerRef.current;
     if (!container) return;
 
     const el = document.createElement('div');
     el.className = 'falling-note';
-    el.textContent = note.replace(/\d+$/, '');
+    // Visual indicator: larger circular dot (no text)
     el.style.position = 'absolute';
+    el.style.width = `44px`;
+    el.style.height = `44px`;
+    el.style.borderRadius = '50%';
+    el.style.background = 'linear-gradient(180deg, #ffefc2 0%, #ffcf5c 100%)';
+    el.style.boxShadow = '0 10px 30px rgba(255, 150, 0, 0.28), 0 2px 6px rgba(0,0,0,0.25)';
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.justifyContent = 'center';
+    el.style.fontWeight = '700';
+    el.style.color = '#111';
     // Position relative to container
     const containerRect = container.getBoundingClientRect();
-    const startTop = -40; // starting top inside container
+    const startTop = -60; // starting top inside container
     const startLeft = targetRect.left + targetRect.width / 2 - containerRect.left;
     el.style.left = `${startLeft}px`;
     el.style.top = `${startTop}px`;
@@ -58,14 +68,19 @@ export const Piano: React.FC = () => {
     const zone = document.createElement('div');
     zone.className = 'landing-zone';
     zone.style.position = 'absolute';
-    const zoneWidth = Math.max(24, targetRect.width * 0.9);
+    // Make landing zone larger than the falling note so the user aims for
+    // the center. Use a taller, wider zone for clarity.
+    const zoneWidth = Math.max(64, targetRect.width * 1.05);
     zone.style.width = `${zoneWidth}px`;
-    zone.style.height = `16px`;
+    zone.style.height = `28px`;
     const zoneLeft = targetRect.left + targetRect.width / 2 - containerRect.left - zoneWidth / 2;
     const zoneTop = endTop - 10; // slightly above the very bottom so it rests on key
     zone.style.left = `${zoneLeft}px`;
     zone.style.top = `${zoneTop}px`;
     zone.style.pointerEvents = 'none';
+    zone.style.display = 'flex';
+    zone.style.alignItems = 'center';
+    zone.style.justifyContent = 'center';
     container.appendChild(zone);
 
     // Animate the falling note from its start position down to the landing
