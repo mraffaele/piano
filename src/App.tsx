@@ -3,6 +3,7 @@ import { Piano } from "./components/Piano";
 import RotateOverlay from "./components/RotateOverlay";
 import PracticePanel from "./components/PracticePanel";
 import "./index.css";
+import "./App.css";
 import { unlockAudio } from "./utils/unlockAudio";
 
 function App() {
@@ -17,29 +18,10 @@ function App() {
   return (
     <div className="app">
       {!started ? (
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 20,
-          }}
-        >
-          <div style={{ textAlign: "center" }}>
-            <h1 style={{ color: "white", marginBottom: 12 }}>
-              Hello Finn & Noah
-            </h1>
-            <button
-              onClick={startExperience}
-              style={{
-                padding: "12px 20px",
-                fontSize: 18,
-                borderRadius: 8,
-                border: "none",
-                background: "#ffd166",
-              }}
-            >
+        <div className="start-screen">
+          <div className="start-content">
+            <h1 className="start-title">Hello Finn & Noah</h1>
+            <button onClick={startExperience} className="start-button">
               Start Playing
             </button>
           </div>

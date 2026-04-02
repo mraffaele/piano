@@ -114,6 +114,7 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
   return (
     <div className="practice-panel">
       <div className="practice-header">
+        <strong>Practice:</strong>
         <select
           className="practice-song-select"
           value={selectedSongId}
@@ -184,7 +185,7 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
                 setMuted(newVal);
               }
             }}
-          />
+          />{" "}
           No sound
         </label>
       </div>
