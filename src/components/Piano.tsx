@@ -77,7 +77,12 @@ export const Piano: React.FC = () => {
   const fallingContainerRef = React.useRef<HTMLDivElement | null>(null);
 
   // React-driven falling notes state
-  const { fallingNotes, addFallingNote, clearAll } = useFallingNotes();
+  const { fallingNotes, addFallingNote, markAccuracy, clearAll } = useFallingNotes();
+
+  // Track practice note timings as a queue per note to handle consecutive identical notes
+  const practiceNoteTimingsRef = React.useRef<
+    Record<string, Array<{ landingTimeMs: number; noteId: string }>>
+  >({});
 
   // Listen for practice visual events to spawn falling notes
   React.useEffect(() => {
@@ -89,6 +94,18 @@ export const Piano: React.FC = () => {
       if (!keyEl || !container) return;
       const keyRect = keyEl.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
+
+      // Calculate landing time (when note reaches the landing zone)
+      const landingTimeMs = Date.now() + (fallMs ?? 1200);
+
+      const noteId = `${note}-${landingTimeMs}`;
+      
+      // Use a queue for each note to handle consecutive identical notes
+      if (!practiceNoteTimingsRef.current[note]) {
+        practiceNoteTimingsRef.current[note] = [];
+      }
+      practiceNoteTimingsRef.current[note].push({ landingTimeMs, noteId });
+
       addFallingNote(
         note,
         keyRect,
@@ -96,11 +113,13 @@ export const Piano: React.FC = () => {
         containerRect.height,
         fallMs ?? 1200,
         durationMs,
+        landingTimeMs,
       );
     };
 
     const onPracticeClear = () => {
       clearAll();
+      practiceNoteTimingsRef.current = {};
     };
 
     window.addEventListener(
@@ -159,9 +178,39 @@ export const Piano: React.FC = () => {
 
         // Record the note if recording
         recordNoteStart(note, frequency, velocity);
+
+        // Check accuracy for practice mode: does this note match an expected falling note?
+        // Use a queue to handle consecutive identical notes
+        const timingsQueue = practiceNoteTimingsRef.current[note];
+        if (timingsQueue && timingsQueue.length > 0) {
+          // Get the oldest (first) timing from the queue
+          const timing = timingsQueue.shift()!;
+          const nowMs = Date.now();
+          const timingDiffMs = Math.abs(nowMs - timing.landingTimeMs);
+          const PERFECT_WINDOW = 50; // ±50ms
+          const GOOD_WINDOW = 150; // ±150ms
+
+          let accuracy: "perfect" | "good" | "miss" = "miss";
+          if (timingDiffMs <= PERFECT_WINDOW) {
+            accuracy = "perfect";
+          } else if (timingDiffMs <= GOOD_WINDOW) {
+            accuracy = "good";
+          }
+
+          // Find the falling note that hasn't been marked yet and mark its accuracy
+          const fallingNote = fallingNotes.find((fn) => fn.note === note && fn.accuracy === null);
+          if (fallingNote) {
+            markAccuracy(fallingNote.id, accuracy, nowMs);
+          }
+          
+          // Clean up empty queue
+          if (timingsQueue.length === 0) {
+            delete practiceNoteTimingsRef.current[note];
+          }
+        }
       }
     },
-    [playNote, recordNoteStart],
+    [playNote, recordNoteStart, fallingNotes, markAccuracy],
   );
 
   const handleNoteEnd = useCallback(

@@ -172,24 +172,32 @@ App.tsx
 
 ### `useFallingNotes.ts`
 
-**Purpose**: React-driven falling note state machine (replaced previous DOM-based approach in Piano.tsx)
+**Purpose**: React-driven falling note state machine with accuracy detection (replaced previous DOM-based approach in Piano.tsx)
 
-**Returns**: `{ fallingNotes: FallingNoteState[], addFallingNote(...), clearAll() }`
+**Returns**: `{ fallingNotes: FallingNoteState[], addFallingNote(...), markAccuracy(...), clearAll() }`
 
 **Key Functions**:
 
-- `addFallingNote(note, keyRect, containerRect, containerHeight, fallMs, durationMs?)`: Creates a new falling note state entry, calculates all positions/dimensions, schedules stage transitions
+- `addFallingNote(note, keyRect, containerRect, containerHeight, fallMs, durationMs?, landingTimeMs?)`: Creates a new falling note state entry, calculates all positions/dimensions, schedules stage transitions, tracks expected landing time for accuracy detection
+- `markAccuracy(noteId, accuracy, pressedAtMs)`: Updates a falling note with accuracy feedback ('perfect', 'good', 'miss', or null)
 - `clearAll()`: Cancels all pending timeouts and removes all notes from state
 
 **Animation Stages**: `"falling"` → `"bouncing"` → `"exiting"` (each drives a CSS class)
 
-**Stage Durations**: BOUNCE_MS = 220, EXIT_MS = 400, ZONE_LINGER_MS = 700
+**Stage Durations**: BOUNCE_MS = 220, EXIT_MS = 400, ZONE_LINGER_MS = 700, ACCURACY_FEEDBACK_MS = 700
+
+**Accuracy Detection**: 
+- Perfect: ±50ms from landing time (green glow)
+- Good: ±150ms from landing time (yellow glow)
+- Miss: Outside 150ms window (red glow)
 
 **Note Height**: When `durationMs` is provided, height scales at 44px/second (min 44px). Circular shape for minimum size, rounded rectangle for longer notes.
 
 **State**: `fallingNotes[]` (React state), `timeoutsRef` (tracks pending stage transition timeouts for cleanup)
 
-**Lifecycle**: Note added → falls linearly → bounces on landing → slides down + fades out → removed from state
+**Lifecycle**: Note added → falls linearly → bounces on landing → accuracy feedback displays → slides down + fades out → removed from state (extended removal delay to account for feedback animation)
+
+**Consecutive Notes Handling**: Uses queue-based timing (`Record<note, timing[]>`) to properly handle fast consecutive identical notes with FIFO processing
 
 ---
 
@@ -248,7 +256,9 @@ App.tsx
 
 **Key Pressing** (`pressedCounts`): `Record<note, count>` tracks overlapping presses. Prevents premature visual release if same note played twice.
 
-**Falling Notes** (practice mode): Managed by `useFallingNotes` hook as React state. Listens for `practice:visualStart` (with `durationMs` for note height), creates `FallingNoteState` entries rendered by `FallingNote` component. CSS animations drive the motion through stages (falling → bouncing → exiting). `practice:clear` event triggers `clearAll()` to remove all notes immediately.
+**Falling Notes** (practice mode): Managed by `useFallingNotes` hook as React state. Listens for `practice:visualStart` (with `durationMs` for note height and `fallMs` for timing), creates `FallingNoteState` entries rendered by `FallingNote` component. CSS animations drive the motion through stages (falling → bouncing → exiting). `practice:clear` event triggers `clearAll()` to remove all notes immediately.
+
+**Accuracy Feedback** (practice mode): When user presses a key during practice, the system compares actual press time against the expected landing time. Feedback is rendered as an expanding glow with text: "✓ PERFECT!" (green, ±50ms), "✓ GOOD!" (yellow, ±150ms), or "✗ MISS" (red, >150ms). Feedback animates over 700ms and extends note lifecycle to prevent premature removal.
 
 **Recording Feedback**: Status indicators "REC", "LOOPING", "UNSAVED"
 
@@ -275,6 +285,35 @@ App.tsx
 
 **Timing**: `beatMs = (60 / effectiveTempo) * 1000`, `timeMs = event.time * beatMs`
 **Muting**: `isMuted` flag checked, audio only (visuals unaffected)
+
+---
+
+### Practice Mode Accuracy Detection System
+
+**Purpose**: Detects timing accuracy of user key presses during practice mode playback and provides visual feedback.
+
+**Timing Flow**:
+
+1. Practice playback dispatches `practice:visualStart` event with falling note
+2. System calculates `landingTimeMs = Date.now() + fallMs` (when note should reach landing zone)
+3. User presses the key during practice
+4. System compares press time with expected landing time
+5. Accuracy determined and feedback rendered
+
+**Accuracy Windows**:
+- **Perfect**: ±50ms (green glow, expands 2.2x)
+- **Good**: ±150ms (yellow glow, expands 1.8x)
+- **Miss**: >150ms (red glow, expands 1.4x)
+
+**Consecutive Notes Handling**: Uses queue-based timing storage per note (`Record<note, Array<{landingTimeMs, noteId}>>`) to handle fast consecutive identical notes. When user presses a key, the oldest (first) timing is dequeued and matched with an unmarked falling note.
+
+**Feedback Animation**: 700ms expanding radial glow with text overlay ("✓ PERFECT!", "✓ GOOD!", "✗ MISS"). Extends note lifecycle to prevent removal before animation completes.
+
+**Configuration** (in `Piano.tsx:handleNoteStart()`):
+```typescript
+const PERFECT_WINDOW = 50;  // ±50ms
+const GOOD_WINDOW = 150;    // ±150ms
+```
 
 ---
 
@@ -372,20 +411,20 @@ App.tsx
 
 ### Key Responsibilities by File
 
-| File                    | Responsibility                                                     |
-| ----------------------- | ------------------------------------------------------------------ |
-| `Piano.tsx`             | Orchestrate input, coordinate audio/recording, manage visual state |
-| `usePianoSynth.ts`      | Web Audio synthesis (oscillators, envelopes, effects)              |
-| `useRecorder.ts`        | Recording state machine, persistence, playback scheduling          |
-| `useTouchHandler.ts`    | Multi-touch input, velocity calculation, state tracking            |
-| `useFallingNotes.ts`    | React-driven falling note state machine, stage transitions         |
-| `soundTypes.ts`         | Piano sound preset definition                                      |
-| `noteFrequencies.ts`    | Note names + frequency lookup (C4–C6)                              |
-| `Key.tsx`               | Key rendering + DOM registration                                   |
-| `FallingNote.tsx`       | Single falling note + landing zone rendering                       |
-| `RecordingControls.tsx` | Record/save/clear UI                                               |
-| `TrackList.tsx`         | Track list display + management                                    |
-| `PracticePanel.tsx`     | Song selection + event scheduling + difficulty                     |
+| File                    | Responsibility                                                                    |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `Piano.tsx`             | Orchestrate input, coordinate audio/recording, manage visual state, detect accuracy |
+| `usePianoSynth.ts`      | Web Audio synthesis (oscillators, envelopes, effects)                             |
+| `useRecorder.ts`        | Recording state machine, persistence, playback scheduling                         |
+| `useTouchHandler.ts`    | Multi-touch input, velocity calculation, state tracking                           |
+| `useFallingNotes.ts`    | React-driven falling note state machine, stage transitions, accuracy tracking     |
+| `soundTypes.ts`         | Piano sound preset definition                                                     |
+| `noteFrequencies.ts`    | Note names + frequency lookup (C4–C6)                                             |
+| `Key.tsx`               | Key rendering + DOM registration                                                  |
+| `FallingNote.tsx`       | Single falling note + landing zone + accuracy feedback rendering                 |
+| `RecordingControls.tsx` | Record/save/clear UI                                                              |
+| `TrackList.tsx`         | Track list display + management                                                   |
+| `PracticePanel.tsx`     | Song selection + event scheduling + difficulty                                    |
 
 ### Critical Data Structures
 
@@ -393,7 +432,7 @@ App.tsx
 - **NoteEvent**: `{type: 'start'|'end', note, frequency, velocity, timestamp}`
 - **SoundPreset**: `{name, envelope, harmonics: Harmonic[], pitchBend?, vibrato?}`
 - **ActiveNote**: `{oscillators[], gainNode, lfoOsc?, lfoGain?}`
-- **FallingNoteState**: `{id, note, stage: 'falling'|'bouncing'|'exiting', fallMs, noteHeight, leftPx, deltaY, showZone, zoneLeftPx, zoneTopPx, zoneWidth}`
+- **FallingNoteState**: `{id, note, stage: 'falling'|'bouncing'|'exiting', fallMs, noteHeight, leftPx, deltaY, bounceDistance, exitDistance, isBlackKey, showZone, zoneLeftPx, zoneTopPx, zoneWidth, accuracy: 'perfect'|'good'|'miss'|null, landingTimeMs, pressedAtMs}`
 
 ### Event Flow
 

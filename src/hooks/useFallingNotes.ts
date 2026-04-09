@@ -9,8 +9,11 @@ const ZONE_HEIGHT = 44; // fixed landing zone height
 const BOUNCE_MS = 220;
 const EXIT_MS = 400;
 const ZONE_LINGER_MS = 700;
+const ACCURACY_FEEDBACK_MS = 700; // Duration of accuracy feedback animation (matching CSS)
 
 type AnimationStage = "falling" | "bouncing" | "exiting";
+
+export type AccuracyType = "perfect" | "good" | "miss" | null;
 
 export interface FallingNoteState {
   id: string;
@@ -38,6 +41,12 @@ export interface FallingNoteState {
   zoneLeftPx: number;
   zoneTopPx: number;
   zoneWidth: number;
+  /** Accuracy of the key press: 'perfect' (±50ms), 'good' (±150ms), 'miss' (outside window), or null (not yet evaluated) */
+  accuracy: AccuracyType;
+  /** Timestamp when the note should land (for accuracy calculation) */
+  landingTimeMs: number;
+  /** Timestamp when user pressed the correct key (null if not yet pressed) */
+  pressedAtMs: number | null;
 }
 
 interface UseFallingNotesReturn {
@@ -49,7 +58,9 @@ interface UseFallingNotesReturn {
     containerHeight: number,
     fallMs: number,
     durationMs?: number,
+    landingTimeMs?: number,
   ) => void;
+  markAccuracy: (noteId: string, accuracy: AccuracyType, pressedAtMs: number) => void;
   clearAll: () => void;
 }
 
@@ -83,6 +94,7 @@ export function useFallingNotes(): UseFallingNotesReturn {
       containerHeight: number,
       fallMs: number,
       durationMs?: number,
+      landingTimeMs?: number,
     ) => {
       const id = `fn-${nextId++}`;
 
@@ -132,6 +144,9 @@ export function useFallingNotes(): UseFallingNotesReturn {
         zoneLeftPx,
         zoneTopPx,
         zoneWidth,
+        accuracy: null,
+        landingTimeMs: landingTimeMs ?? 0,
+        pressedAtMs: null,
       };
 
       setFallingNotes((prev) => [...prev, newNote]);
@@ -165,9 +180,11 @@ export function useFallingNotes(): UseFallingNotesReturn {
       }, fallMs + BOUNCE_MS);
 
       // Remove from state after exit animation completes
+      // If accuracy feedback is shown, ensure we wait for it to complete (600ms)
+      const removalDelayMs = fallMs + BOUNCE_MS + EXIT_MS + ACCURACY_FEEDBACK_MS + 50;
       scheduleTimeout(() => {
         setFallingNotes((prev) => prev.filter((n) => n.id !== id));
-      }, fallMs + BOUNCE_MS + EXIT_MS + 50);
+      }, removalDelayMs);
     },
     [scheduleTimeout],
   );
@@ -179,5 +196,16 @@ export function useFallingNotes(): UseFallingNotesReturn {
     setFallingNotes([]);
   }, []);
 
-  return { fallingNotes, addFallingNote, clearAll };
+  const markAccuracy = useCallback(
+    (noteId: string, accuracy: AccuracyType, pressedAtMs: number) => {
+      setFallingNotes((prev) =>
+        prev.map((n) =>
+          n.id === noteId ? { ...n, accuracy, pressedAtMs } : n,
+        ),
+      );
+    },
+    [],
+  );
+
+  return { fallingNotes, addFallingNote, markAccuracy, clearAll };
 }

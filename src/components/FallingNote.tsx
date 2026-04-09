@@ -12,6 +12,7 @@ interface FallingNoteProps {
 /**
  * Renders a single falling note element and its landing zone.
  * All animation is driven by CSS classes based on `state.stage`.
+ * Accuracy feedback is shown as an overlay when the user hits the note.
  * Only per-instance dynamic values (position, size, timing) are inline;
  * everything else lives in FallingNote.css.
  */
@@ -30,6 +31,7 @@ export const FallingNote: React.FC<FallingNoteProps> = React.memo(
       zoneLeftPx,
       zoneTopPx,
       zoneWidth,
+      accuracy,
     } = state;
 
     const shapeClass =
@@ -60,6 +62,21 @@ export const FallingNote: React.FC<FallingNoteProps> = React.memo(
               height: ZONE_HEIGHT,
             }}
           />
+        )}
+        {accuracy && (
+          <div
+            className={`accuracy-feedback accuracy-feedback--${accuracy}`}
+            style={{
+              left: leftPx,
+              top: zoneTopPx,
+              width: NOTE_SIZE,
+              height: ZONE_HEIGHT,
+            }}
+          >
+            <span className="accuracy-text">
+              {accuracy === "perfect" ? "✓ PERFECT!" : accuracy === "good" ? "✓ GOOD!" : "✗ MISS"}
+            </span>
+          </div>
         )}
       </>
     );
