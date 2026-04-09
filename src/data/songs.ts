@@ -1,6 +1,6 @@
 // Generated song definitions derived from songs/*.md
 // Each song contains a simple sequence of events (time in beats, note, dur in beats)
-export interface SongEvent {
+interface SongEvent {
   time: number;
   note: string;
   dur: number;
@@ -66,7 +66,7 @@ export const SONGS: Song[] = [
       { time: 30.5, note: "B4", dur: 1 },
       //
 
-      { time: 32.25, note: "C5", dur: 1 },
+      { time: 32.5, note: "C5", dur: 1 },
       { time: 34, note: "B4", dur: 1 },
       { time: 36, note: "A4", dur: 1 },
       { time: 36.5, note: "E4", dur: 1 },
@@ -191,32 +191,6 @@ export const SONGS: Song[] = [
       { time: 30, note: "C4", dur: 3 },
     ],
   },
-  // {
-  //   id: "let_it_go",
-  //   title: "Let It Go",
-  //   tempo: 140,
-  //   events: [
-  //     { time: 0, note: "G5", dur: 1 },
-  //     { time: 1, note: "G#5", dur: 1 },
-  //     { time: 2, note: "C5", dur: 1 },
-  //     { time: 3, note: "G5", dur: 2 },
-  //     { time: 5, note: "G#5", dur: 3 },
-  //     { time: 8, note: "G5", dur: 1 },
-  //     { time: 9, note: "G#5", dur: 1 },
-  //     { time: 10, note: "C5", dur: 1 },
-  //     { time: 11, note: "G#5", dur: 2 },
-  //     { time: 13, note: "G5", dur: 3 },
-  //     { time: 16, note: "A#4", dur: 1 },
-  //     { time: 17, note: "F5", dur: 1 },
-  //     { time: 18, note: "G5", dur: 1 },
-  //     { time: 19, note: "A#4", dur: 1 },
-  //     { time: 20, note: "F5", dur: 2 },
-  //     { time: 22, note: "G5", dur: 2 },
-  //     { time: 23, note: "D#5", dur: 1 },
-  //     { time: 24, note: "C#5", dur: 3 },
-  //     //https://www.youtube.com/watch?v=-amj0ID6NKs
-  //   ],
-  // },
   {
     id: "sunshine",
     title: "You Are My Sunshine",
@@ -279,5 +253,3 @@ export const SONGS: Song[] = [
     ],
   },
 ];
-
-export default SONGS;

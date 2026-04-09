@@ -58,24 +58,6 @@
   border-radius: 50%;
 }
 
-/* Play button */
-.play-btn {
-  background: rgba(52, 199, 89, 0.2);
-}
-
-.play-btn:hover:not(:disabled) {
-  background: rgba(52, 199, 89, 0.4);
-}
-
-.play-icon {
-  width: 0;
-  height: 0;
-  border-left: 14px solid #34c759;
-  border-top: 9px solid transparent;
-  border-bottom: 9px solid transparent;
-  margin-left: 3px;
-}
-
 /* Stop button */
 .stop-btn {
   background: rgba(255, 149, 0, 0.2);

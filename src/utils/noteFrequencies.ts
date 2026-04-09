@@ -1,7 +1,7 @@
 // Note frequencies for piano keys C4 to C6 (2 octaves + 1 key = 25 keys)
 // Using equal temperament tuning with A4 = 440 Hz
 
-export interface NoteInfo {
+interface NoteInfo {
   note: string;
   frequency: number;
   isBlack: boolean;
@@ -19,7 +19,7 @@ const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', '
 const blackKeys = new Set(['C#', 'D#', 'F#', 'G#', 'A#']);
 
 // Generate notes from C4 to C6 (25 keys)
-export const generateNotes = (): NoteInfo[] => {
+const generateNotes = (): NoteInfo[] => {
   const notes: NoteInfo[] = [];
   
   // C4 is 9 semitones below A4

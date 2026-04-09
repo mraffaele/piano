@@ -12,32 +12,17 @@ export const RotateOverlay: React.FC = () => {
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mq = window.matchMedia("(orientation: portrait)");
-    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+    const handler = (e: MediaQueryListEvent) => {
       setIsPortrait(e.matches);
     };
 
-    // For older browsers, matchMedia may use addListener
-    try {
-      if ((mq as any).addEventListener) {
-        (mq as any).addEventListener("change", handler);
-      } else if ((mq as any).addListener) {
-        (mq as any).addListener(handler);
-      }
-    } catch (e) {
-      // ignore
-    }
+    mq.addEventListener("change", handler);
 
     // initial
     setIsPortrait(mq.matches);
 
     return () => {
-      try {
-        if ((mq as any).removeEventListener) {
-          (mq as any).removeEventListener("change", handler);
-        } else if ((mq as any).removeListener) {
-          (mq as any).removeListener(handler);
-        }
-      } catch (e) {}
+      mq.removeEventListener("change", handler);
     };
   }, []);
 
@@ -55,10 +40,7 @@ export const RotateOverlay: React.FC = () => {
         <div className="rotate-text">
           Rotate to landscape mode for the best piano experience!
         </div>
-        {/* <div className="rotate-sub">The piano works best in landscape mode</div> */}
       </div>
     </div>
   );
 };
-
-export default RotateOverlay;

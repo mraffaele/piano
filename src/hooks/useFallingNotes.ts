@@ -10,7 +10,7 @@ const BOUNCE_MS = 220;
 const EXIT_MS = 400;
 const ZONE_LINGER_MS = 700;
 
-export type AnimationStage = "falling" | "bouncing" | "exiting";
+type AnimationStage = "falling" | "bouncing" | "exiting";
 
 export interface FallingNoteState {
   id: string;

@@ -4,7 +4,6 @@ import { Key } from "./Key";
 import { FallingNote } from "./FallingNote";
 import { RecordingControls } from "./RecordingControls";
 import { TrackList } from "./TrackList";
-import { SoundSelector } from "./SoundSelector";
 import { usePianoSynth } from "../hooks/usePianoSynth";
 import { useTouchHandler } from "../hooks/useTouchHandler";
 import { useRecorder } from "../hooks/useRecorder";
@@ -19,6 +18,49 @@ const BLACK_KEY_OFFSETS: Record<string, number> = {
   "F#": 4,
   "G#": 5,
   "A#": 6,
+};
+
+interface PracticeVisualDetail {
+  note: string;
+  fallMs?: number;
+  durationMs?: number;
+}
+
+interface PracticePlayDetail {
+  note: string;
+  freq?: number;
+  vel?: number;
+  muted?: boolean;
+}
+
+interface PracticeStopDetail {
+  note: string;
+  muted?: boolean;
+}
+
+/** Increment the press count for a note (user or playback pressed a key). */
+const incrementPressed = (
+  prev: Record<string, number>,
+  note: string,
+): Record<string, number> => {
+  const next = { ...prev };
+  next[note] = (next[note] || 0) + 1;
+  return next;
+};
+
+/** Decrement the press count for a note, removing the entry when it hits 0. */
+const decrementPressed = (
+  prev: Record<string, number>,
+  note: string,
+): Record<string, number> => {
+  const next = { ...prev };
+  const current = next[note] || 0;
+  if (current <= 1) {
+    delete next[note];
+  } else {
+    next[note] = current - 1;
+  }
+  return next;
 };
 
 export const Piano: React.FC = () => {
@@ -37,55 +79,52 @@ export const Piano: React.FC = () => {
   // React-driven falling notes state
   const { fallingNotes, addFallingNote, clearAll } = useFallingNotes();
 
-   // Listen for practice visual events to spawn falling notes
-   React.useEffect(() => {
-     const onVisualStart = (e: any) => {
-       const { note, fallMs, durationMs } = e.detail || {};
-       if (!note) return;
-       const keyEl = keyRefs.current[note];
-       const container = fallingContainerRef.current;
-       if (!keyEl || !container) return;
-       const keyRect = keyEl.getBoundingClientRect();
-       const containerRect = container.getBoundingClientRect();
-       addFallingNote(
-         note,
-         keyRect,
-         containerRect,
-         containerRect.height,
-         fallMs ?? 1200,
-         durationMs,
-       );
-     };
+  // Listen for practice visual events to spawn falling notes
+  React.useEffect(() => {
+    const onVisualStart = (e: CustomEvent<PracticeVisualDetail>) => {
+      const { note, fallMs, durationMs } = e.detail;
+      if (!note) return;
+      const keyEl = keyRefs.current[note];
+      const container = fallingContainerRef.current;
+      if (!keyEl || !container) return;
+      const keyRect = keyEl.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      addFallingNote(
+        note,
+        keyRect,
+        containerRect,
+        containerRect.height,
+        fallMs ?? 1200,
+        durationMs,
+      );
+    };
 
-     const onPracticeClear = () => {
-       clearAll();
-     };
+    const onPracticeClear = () => {
+      clearAll();
+    };
 
-     window.addEventListener(
-       "practice:visualStart",
-       onVisualStart as EventListener,
-     );
-     window.addEventListener(
-       "practice:clear",
-       onPracticeClear as EventListener,
-     );
-     return () => {
-       window.removeEventListener(
-         "practice:visualStart",
-         onVisualStart as EventListener,
-       );
-       window.removeEventListener(
-         "practice:clear",
-         onPracticeClear as EventListener,
-       );
-     };
-   }, [addFallingNote, clearAll]);
+    window.addEventListener(
+      "practice:visualStart",
+      onVisualStart as EventListener,
+    );
+    window.addEventListener("practice:clear", onPracticeClear as EventListener);
+    return () => {
+      window.removeEventListener(
+        "practice:visualStart",
+        onVisualStart as EventListener,
+      );
+      window.removeEventListener(
+        "practice:clear",
+        onPracticeClear as EventListener,
+      );
+    };
+  }, [addFallingNote, clearAll]);
   // Track active play counts per note so overlapping plays of the same
   // note don't prematurely clear the visual state when one instance stops.
   const [pressedCounts, setPressedCounts] = useState<Record<string, number>>(
     {},
   );
-  const [soundType, setSoundType] = useState<string>("piano");
+  const [soundType, _setSoundType] = useState<string>("piano");
   const [playbackSoundType, setPlaybackSoundType] = useState<string>("piano");
 
   // Main synth for live playing (uses current soundType)
@@ -116,11 +155,7 @@ export const Piano: React.FC = () => {
       if (frequency) {
         // Ensure audio context resumes within the user gesture by awaiting playNote
         await playNote(note, frequency, velocity);
-        setPressedCounts((prev) => {
-          const next = { ...prev };
-          next[note] = (next[note] || 0) + 1;
-          return next;
-        });
+        setPressedCounts((prev) => incrementPressed(prev, note));
 
         // Record the note if recording
         recordNoteStart(note, frequency, velocity);
@@ -133,16 +168,7 @@ export const Piano: React.FC = () => {
     (note: string) => {
       const frequency = NOTE_FREQUENCIES[note];
       stopNote(note);
-      setPressedCounts((prev) => {
-        const next = { ...prev };
-        const current = next[note] || 0;
-        if (current <= 1) {
-          delete next[note];
-        } else {
-          next[note] = current - 1;
-        }
-        return next;
-      });
+      setPressedCounts((prev) => decrementPressed(prev, note));
 
       // Record the note end if recording
       if (frequency) {
@@ -156,11 +182,7 @@ export const Piano: React.FC = () => {
   const handlePlaybackNoteStart = useCallback(
     (note: string, frequency: number, velocity: number) => {
       playbackPlayNote(note, frequency, velocity);
-      setPressedCounts((prev) => {
-        const next = { ...prev };
-        next[note] = (next[note] || 0) + 1;
-        return next;
-      });
+      setPressedCounts((prev) => incrementPressed(prev, note));
     },
     [playbackPlayNote],
   );
@@ -172,16 +194,7 @@ export const Piano: React.FC = () => {
       // stop->play sequences (like in Practice playback) show a brief
       // release between notes instead of being batched together.
       flushSync(() => {
-        setPressedCounts((prev) => {
-          const next = { ...prev };
-          const current = next[note] || 0;
-          if (current <= 1) {
-            delete next[note];
-          } else {
-            next[note] = current - 1;
-          }
-          return next;
-        });
+        setPressedCounts((prev) => decrementPressed(prev, note));
       });
     },
     [playbackStopNote],
@@ -189,8 +202,8 @@ export const Piano: React.FC = () => {
 
   // Listen for practice panel play/stop events and forward to playback handlers
   React.useEffect(() => {
-    const onPracticePlay = (e: any) => {
-      const { note, freq, vel, muted } = e.detail || {};
+    const onPracticePlay = (e: CustomEvent<PracticePlayDetail>) => {
+      const { note, freq, vel, muted } = e.detail;
       if (!note) return;
 
       // When practice playback triggers a note, we want the falling-note
@@ -204,8 +217,8 @@ export const Piano: React.FC = () => {
       }
     };
 
-    const onPracticeStop = (e: any) => {
-      const { note, muted } = e.detail || {};
+    const onPracticeStop = (e: CustomEvent<PracticeStopDetail>) => {
+      const { note, muted } = e.detail;
       if (!note) return;
 
       // For practice playback we do not update pressedCounts so the key
@@ -278,7 +291,7 @@ export const Piano: React.FC = () => {
   }, []);
 
   // Calculate black key positions
-  const getBlackKeyPosition = (note: string, _index: number) => {
+  const getBlackKeyPosition = (note: string) => {
     const noteName = note.replace(/\d+$/, "");
     const octave = parseInt(note.match(/\d+$/)?.[0] || "4", 10);
     const octaveOffset = (octave - 4) * 7; // 7 white keys per octave
@@ -313,14 +326,9 @@ export const Piano: React.FC = () => {
         onRename={renameTrack}
       />
 
-      <SoundSelector currentSound={soundType} onSoundChange={setSoundType} />
-
       <div className="piano-container" {...touchHandlers}>
         {/* Overlay for falling notes: positioned absolute to cover the piano area */}
-        <div
-          ref={fallingContainerRef}
-          className="falling-notes-overlay"
-        >
+        <div ref={fallingContainerRef} className="falling-notes-overlay">
           {fallingNotes.map((note) => (
             <FallingNote key={note.id} state={note} />
           ))}
@@ -339,12 +347,12 @@ export const Piano: React.FC = () => {
           ))}
 
           {/* Black keys - positioned absolutely */}
-          {blackKeys.map((noteInfo, index) => (
+          {blackKeys.map((noteInfo) => (
             <div
               key={noteInfo.note}
               className="black-key-container"
               style={{
-                left: `${getBlackKeyPosition(noteInfo.note, index)}%`,
+                left: `${getBlackKeyPosition(noteInfo.note)}%`,
               }}
             >
               <Key

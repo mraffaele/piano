@@ -1,6 +1,7 @@
 # Piano Codebase Architecture Guide for AI Agents
 
 ## Table of Contents
+
 1. [Quick Overview](#quick-overview)
 2. [Architecture & Data Flow](#architecture--data-flow)
 3. [Component Reference](#component-reference)
@@ -16,10 +17,11 @@
 
 **Piano** is a React 18 + TypeScript piano app for iPad with Web Audio API synthesis.
 
-**Core Features**: 25-key piano (C4–C6), 40+ instruments, multi-touch with velocity, recording (3 tracks max), practice mode with falling notes, localStorage persistence.
+**Core Features**: 25-key piano (C4–C6), multi-touch with velocity, recording (3 tracks max), practice mode with falling notes, localStorage persistence.
 
 **Key Files**:
-- `soundTypes.ts`: 40+ instrument presets
+
+- `soundTypes.ts`: Piano sound preset
 - `usePianoSynth.ts`: Web Audio synthesis
 - `Piano.tsx`: Main coordinator
 - `useRecorder.ts`: Recording/playback
@@ -33,6 +35,7 @@
 ## Architecture & Data Flow
 
 ### Application Hierarchy
+
 ```
 App.tsx
 ├── RotateOverlay
@@ -47,18 +50,19 @@ App.tsx
 
 ### State Management
 
-| Layer | Location | Data |
-|-------|----------|------|
-| **React State** | Component-level | `pressedCounts`, `soundType`, `playbackSoundType`, `selectedSong`, `isPlaying`, `isMuted`, `difficulty` |
-| **Hook Refs** | usePianoSynth | `audioContextRef`, `activeNotesRef`, `masterGainRef` |
-| | useRecorder | `currentEvents`, `tracks`, `activeTrackId`, `recordingStartTime` |
-| | useTouchHandler | `activeTouchesRef`, `releasingTouchesRef` |
-| | useFallingNotes | `fallingNotes[]`, `timeoutsRef` |
-| **Persistent** | localStorage['piano-tracks'] | Track[] (max 3) |
+| Layer           | Location                     | Data                                                                                                    |
+| --------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **React State** | Component-level              | `pressedCounts`, `soundType`, `playbackSoundType`, `selectedSong`, `isPlaying`, `isMuted`, `difficulty` |
+| **Hook Refs**   | usePianoSynth                | `audioContextRef`, `activeNotesRef`, `masterGainRef`                                                    |
+|                 | useRecorder                  | `currentEvents`, `tracks`, `activeTrackId`, `recordingStartTime`                                        |
+|                 | useTouchHandler              | `activeTouchesRef`, `releasingTouchesRef`                                                               |
+|                 | useFallingNotes              | `fallingNotes[]`, `timeoutsRef`                                                                         |
+| **Persistent**  | localStorage['piano-tracks'] | Track[] (max 3)                                                                                         |
 
 ### Data Flows
 
 **User Input → Sound**:
+
 1. Touch event → `useTouchHandler.handleTouchStart()`
 2. Find note via `elementFromPoint()` + DOM traversal
 3. Calculate velocity from Y position (top=0.2, bottom=1.0)
@@ -72,11 +76,11 @@ App.tsx
 
 ### Component Communication
 
-| Channel | Direction | Events |
-|---------|-----------|--------|
-| **Direct callbacks** | Piano ↔ Children | `onNoteStart`, `onNoteEnd`, `onRecord`, `onSave` |
-| **Custom events** | PracticePanel → Piano | `practice:visualStart`, `practice:play`, `practice:stop`, `practice:clear` |
-| **Hook returns** | Hooks → Piano | `playNote()`, `stopNote()`, `recordNoteStart()`, `playTrack()` |
+| Channel              | Direction             | Events                                                                     |
+| -------------------- | --------------------- | -------------------------------------------------------------------------- |
+| **Direct callbacks** | Piano ↔ Children      | `onNoteStart`, `onNoteEnd`, `onRecord`, `onSave`                           |
+| **Custom events**    | PracticePanel → Piano | `practice:visualStart`, `practice:play`, `practice:stop`, `practice:clear` |
+| **Hook returns**     | Hooks → Piano         | `playNote()`, `stopNote()`, `recordNoteStart()`, `playTrack()`             |
 
 ---
 
@@ -84,49 +88,51 @@ App.tsx
 
 ### Major Components
 
-| Component | Purpose | Key State |
-|-----------|---------|-----------|
-| **Piano.tsx** | Render 25 keys, coordinate audio/recording/input, falling notes animation | `pressedCounts`, `soundType`, `playbackSoundType` |
-| **PracticePanel.tsx** | Song selection, playback with visual cues, difficulty selection | `selectedSong`, `isPlaying`, `isLooping`, `isMuted`, `difficulty` |
-| **RecordingControls.tsx** | Record/Save/Clear UI, state indicators | Button display based on `recorderState` |
-| **TrackList.tsx** | List saved tracks, play/delete/rename | Track array, active track ID |
+| Component                 | Purpose                                                                   | Key State                                                         |
+| ------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **Piano.tsx**             | Render 25 keys, coordinate audio/recording/input, falling notes animation | `pressedCounts`, `soundType`, `playbackSoundType`                 |
+| **PracticePanel.tsx**     | Song selection, playback with visual cues, difficulty selection           | `selectedSong`, `isPlaying`, `isLooping`, `isMuted`, `difficulty` |
+| **RecordingControls.tsx** | Record/Save/Clear UI, state indicators                                    | Button display based on `recorderState`                           |
+| **TrackList.tsx**         | List saved tracks, play/delete/rename                                     | Track array, active track ID                                      |
 
 ### Minor Components
 
-| Component | Purpose |
-|-----------|---------|
-| **App.tsx** | Splash screen, audio unlock, root layout |
-| **Key.tsx** | Individual key rendering, DOM registration |
-| **FallingNote.tsx** | Single falling note + landing zone rendering (CSS-animated) |
-| **SoundSelector.tsx** | Sound selection UI (currently disabled) |
-| **RotateOverlay.tsx** | Portrait mode warning |
+| Component             | Purpose                                                     |
+| --------------------- | ----------------------------------------------------------- |
+| **App.tsx**           | Splash screen, audio unlock, root layout                    |
+| **Key.tsx**           | Individual key rendering, DOM registration                  |
+| **FallingNote.tsx**   | Single falling note + landing zone rendering (CSS-animated) |
+| **SoundSelector.tsx** | Sound selection UI (currently disabled)                     |
+| **RotateOverlay.tsx** | Portrait mode warning                                       |
 
 ---
 
 ## Hook Reference
 
 ### `usePianoSynth.ts`
+
 **Purpose**: Web Audio API synthesis engine
 
 **Returns**: `{ playNote(note, freq, velocity), stopNote(note) }`
 
 **Key Functions**:
+
 - `playNote()`: Lazy-init AudioContext (iOS compliant), create oscillators per harmonic, apply ADSR, vibrato LFO, pitch bend
 - `stopNote()`: Apply release envelope, stop oscillators, cleanup
-- `playDrumSound()`: For drum kit mode, 25 different drum sounds per key, auto-cleanup
 
-**State**: `audioContextRef`, `activeNotesRef: Map<note, {oscillators, gainNode, lfoOsc?, lfoGain?, noiseSource?}>`, `masterGainRef` (0.5 attenuation)
+**State**: `audioContextRef`, `activeNotesRef: Map<note, {oscillators, gainNode, lfoOsc?, lfoGain?}>`, `masterGainRef` (0.5 attenuation)
 
 **ADSR Envelope**: Attack → Decay → Sustain (held level) → Release (on stop)
-**Noise Buffer**: 2-second white noise cached, reused for drums/snares/hi-hats
 **Cleanup**: Removes orphaned oscillators, closes context on unmount
 
 ---
 
 ### `useRecorder.ts`
+
 **Purpose**: Recording state machine + localStorage persistence
 
-**Returns**: 
+**Returns**:
+
 ```
 {
   state, hasCurrentRecording, tracks, activeTrackId,
@@ -146,6 +152,7 @@ App.tsx
 ---
 
 ### `useTouchHandler.ts`
+
 **Purpose**: Multi-touch + mouse input with velocity sensitivity
 
 **Returns**: `{ touchHandlers: {onTouchStart, onTouchMove, onTouchEnd, onTouchCancel}, mouseHandlers: {onMouseDown, onMouseUp, onMouseEnter, onMouseLeave}, onNoteStart, onNoteEnd }`
@@ -157,17 +164,20 @@ App.tsx
 **Release Debounce**: Mark touching as "releasing" for 50ms on lift-off, skip spurious `touchmove` events (iPad fix)
 
 **Handlers**:
+
 - `handleTouchStart/Move/End`: DOM traversal via `elementFromPoint()`, velocity calc, state tracking
 - Mouse handlers: Same logic, single "touch" ID = -1
 
 ---
 
 ### `useFallingNotes.ts`
+
 **Purpose**: React-driven falling note state machine (replaced previous DOM-based approach in Piano.tsx)
 
 **Returns**: `{ fallingNotes: FallingNoteState[], addFallingNote(...), clearAll() }`
 
 **Key Functions**:
+
 - `addFallingNote(note, keyRect, containerRect, containerHeight, fallMs, durationMs?)`: Creates a new falling note state entry, calculates all positions/dimensions, schedules stage transitions
 - `clearAll()`: Cancels all pending timeouts and removes all notes from state
 
@@ -188,28 +198,26 @@ App.tsx
 ### Sound Synthesis System
 
 **SoundPreset Structure** (soundTypes.ts):
+
 - `name`, `emoji`: Display info
 - `envelope`: {attack, decay, sustain, release} in seconds
 - `harmonics[]`: {freqMultiplier, gainMultiplier, waveform, detune?}
 - `pitchBend?`, `vibrato?`: LFO modulation
-- `isDrumKit?`, `isSoundBoard?`: Special modes
 
-**40+ Instruments**: Piano, guitar, strings, drums, animals (duck, cat, dog), 8-bit (laser, coin, powerup), silly (fart, kazoo, slideWhistle)
-
-**Synthesis**: Harmonic oscillators (polyharmonic), each with independent frequency/waveform/gain. LFO modulates detune for vibrato. Pitch bend sweeps frequency. Noise injection for percussion. ADSR shapes loudness.
-
-**Drum Kit**: 25 different drum sounds per key (kick, snare, hi-hat, etc.), auto-cleanup after envelope.
+**Synthesis**: Harmonic oscillators (polyharmonic), each with independent frequency/waveform/gain. LFO modulates detune for vibrato. Pitch bend sweeps frequency. ADSR shapes loudness.
 
 ---
 
 ### Recording & Playback System
 
 **Recording Phase**:
+
 1. `startRecording()` resets events array
 2. Each note press/release → timestamped event
 3. `saveTrack()` persists to localStorage
 
 **Playback Phase**:
+
 1. `playTrack(id)` extracts events
 2. Schedule timeouts: `setTimeout(() => onNoteStart(note, freq, vel), delayMs)`
 3. Auto-loop infinitely until `stopPlayback()`
@@ -223,6 +231,7 @@ App.tsx
 ### Input Handling System
 
 **Touch Flow**:
+
 - `touchstart` → `elementFromPoint()` → DOM traversal → velocity calc → `onNoteStart()`
 - `touchmove` → detect key change → `onNoteEnd()` + `onNoteStart()`
 - `touchend` → mark releasing → `onNoteEnd()` → cleanup 50ms later
@@ -254,6 +263,7 @@ App.tsx
 **Difficulty System**: 4 levels scale the song tempo — easy (50%), medium (75%), hard (100%), silly (150%). Effective tempo = `song.tempo * DIFFICULTY_TEMPO_SCALE[difficulty]`. Changing difficulty while playing restarts playback.
 
 **Playback Flow**:
+
 1. Dispatch `practice:visualStart` with `durationMs` → falling animation (note height proportional to duration)
 2. Wait `FALL_MS` (1800ms)
 3. Dispatch `practice:play` with audio (respects `isMuted`)
@@ -271,11 +281,13 @@ App.tsx
 ## Adding Features
 
 ### Add New Sound Instrument
+
 1. `src/utils/soundTypes.ts` → add `SoundPreset` to `SOUND_TYPES`
 2. Define: name, emoji, envelope (ADSR), harmonics, optional pitch bend/vibrato
 3. Key decisions: harmonic count (richness vs performance), attack (responsiveness), release (tail length), waveforms, vibrato depth
 
 ### Add Recording Feature
+
 1. Extend `Track` interface in `useRecorder.ts`
 2. Update `saveTrack()` to include field
 3. Update `loadTracksFromStorage()` if needed
@@ -283,16 +295,19 @@ App.tsx
 5. Test save/load cycle
 
 ### Add Practice Song
+
 1. `src/data/songs.ts` → add `Song` object with events array
 2. Format: `{time: beat#, note: 'C4', dur: beats}`
 3. Test tempo accuracy
 
 ### Modify Input Behavior
+
 1. Edit `useTouchHandler.ts` handlers
 2. Adjust `calculateVelocity()` (min 0.2 → max 1.0)
 3. Test multi-touch edge cases
 
 ### Add UI Feature
+
 1. Add state to component
 2. Create handler function
 3. Pass as prop or dispatch custom event
@@ -318,23 +333,22 @@ App.tsx
 
 ## Known Issues & Workarounds
 
-| Issue | Symptom | Cause | Workaround | Location |
-|-------|---------|-------|-----------|----------|
-| iPad note replay | Note plays again on release | iOS spurious touchmove during lift-off | `releasingTouchesRef` flags prevent start during 50ms window | useTouchHandler.ts:78,122 |
-| iOS audio unlock | No sound on first touch | AudioContext suspended by iOS autoplay policy | `unlockAudio()` + `context.resume()` awaited | unlockAudio.ts, usePianoSynth.ts:47 |
-| Playback cuts off | Last notes missing | Scheduling uses timestamp only, ignores duration | Rely on release envelope, or estimate from next event | useRecorder.ts |
-| Max 3 tracks | Can't save more | Hardcoded limit for localStorage | Increase limit if needed | useRecorder.ts |
-| Drum sounds cut off | Early termination | Envelope completion ignores reverb tail | Increase release parameter | soundTypes.ts DRUM_SOUNDS |
-| Touch velocity flat | Soft/loud difference inaudible | Range 0.2–1.0 too narrow | Adjust minVelocity/maxVelocity or peakGain | useTouchHandler.ts:25, usePianoSynth.ts:249 |
-| Storage quota exceeded | Can't save tracks | Large track count consumes quota | Implement cleanup UI (not yet done) | useRecorder.ts |
-| Practice timing drifts | Playback desyncs | setTimeout drift accumulates (~50ms/sec) | Use requestAnimationFrame for better timing (refactor needed) | PracticePanel.tsx |
-| SoundSelector disabled | Instrument selector hidden | Not integrated with Piano | Remove return null, add onSoundChange callback | SoundSelector.tsx:15 |
+| Issue                  | Symptom                        | Cause                                            | Workaround                                                    | Location                                    |
+| ---------------------- | ------------------------------ | ------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------- |
+| iPad note replay       | Note plays again on release    | iOS spurious touchmove during lift-off           | `releasingTouchesRef` flags prevent start during 50ms window  | useTouchHandler.ts:78,122                   |
+| iOS audio unlock       | No sound on first touch        | AudioContext suspended by iOS autoplay policy    | `unlockAudio()` + `context.resume()` awaited                  | unlockAudio.ts, usePianoSynth.ts:47         |
+| Playback cuts off      | Last notes missing             | Scheduling uses timestamp only, ignores duration | Rely on release envelope, or estimate from next event         | useRecorder.ts                              |
+| Max 3 tracks           | Can't save more                | Hardcoded limit for localStorage                 | Increase limit if needed                                      | useRecorder.ts                              |
+| Touch velocity flat    | Soft/loud difference inaudible | Range 0.2–1.0 too narrow                         | Adjust minVelocity/maxVelocity or peakGain                    | useTouchHandler.ts:25, usePianoSynth.ts:249 |
+| Storage quota exceeded | Can't save tracks              | Large track count consumes quota                 | Implement cleanup UI (not yet done)                           | useRecorder.ts                              |
+| Practice timing drifts | Playback desyncs               | setTimeout drift accumulates (~50ms/sec)         | Use requestAnimationFrame for better timing (refactor needed) | PracticePanel.tsx                           |
+| SoundSelector disabled | Instrument selector hidden     | Not integrated with Piano                        | Remove return null, add onSoundChange callback                | SoundSelector.tsx:15                        |
 
 ---
 
 ## Development Workflow
 
-**Add instrument**: `src/utils/soundTypes.ts` → add SOUND_TYPES entry
+**Add instrument**: `src/utils/soundTypes.ts` → add SoundPreset to SOUND_TYPES
 **Fix touch issue**: `src/hooks/useTouchHandler.ts` → modify handler logic
 **Add song**: `src/data/songs.ts` → add Song object
 **Modify envelope**: `src/utils/soundTypes.ts` → adjust ADSR values
@@ -358,27 +372,27 @@ App.tsx
 
 ### Key Responsibilities by File
 
-| File | Responsibility |
-|------|---|
-| `Piano.tsx` | Orchestrate input, coordinate audio/recording, manage visual state |
-| `usePianoSynth.ts` | Web Audio synthesis (oscillators, envelopes, effects) |
-| `useRecorder.ts` | Recording state machine, persistence, playback scheduling |
-| `useTouchHandler.ts` | Multi-touch input, velocity calculation, state tracking |
-| `useFallingNotes.ts` | React-driven falling note state machine, stage transitions |
-| `soundTypes.ts` | 40+ instrument synthesis presets |
-| `noteFrequencies.ts` | Note names + frequency lookup (C4–C6) |
-| `Key.tsx` | Key rendering + DOM registration |
-| `FallingNote.tsx` | Single falling note + landing zone rendering |
-| `RecordingControls.tsx` | Record/save/clear UI |
-| `TrackList.tsx` | Track list display + management |
-| `PracticePanel.tsx` | Song selection + event scheduling + difficulty |
+| File                    | Responsibility                                                     |
+| ----------------------- | ------------------------------------------------------------------ |
+| `Piano.tsx`             | Orchestrate input, coordinate audio/recording, manage visual state |
+| `usePianoSynth.ts`      | Web Audio synthesis (oscillators, envelopes, effects)              |
+| `useRecorder.ts`        | Recording state machine, persistence, playback scheduling          |
+| `useTouchHandler.ts`    | Multi-touch input, velocity calculation, state tracking            |
+| `useFallingNotes.ts`    | React-driven falling note state machine, stage transitions         |
+| `soundTypes.ts`         | Piano sound preset definition                                      |
+| `noteFrequencies.ts`    | Note names + frequency lookup (C4–C6)                              |
+| `Key.tsx`               | Key rendering + DOM registration                                   |
+| `FallingNote.tsx`       | Single falling note + landing zone rendering                       |
+| `RecordingControls.tsx` | Record/save/clear UI                                               |
+| `TrackList.tsx`         | Track list display + management                                    |
+| `PracticePanel.tsx`     | Song selection + event scheduling + difficulty                     |
 
 ### Critical Data Structures
 
 - **Track**: `{id, name, events: NoteEvent[], createdAt, duration, soundType}`
 - **NoteEvent**: `{type: 'start'|'end', note, frequency, velocity, timestamp}`
-- **SoundPreset**: `{name, envelope, harmonics: Harmonic[], pitchBend?, vibrato?, isDrumKit?}`
-- **ActiveNote**: `{oscillators[], gainNode, lfoOsc?, lfoGain?, noiseSource?}`
+- **SoundPreset**: `{name, envelope, harmonics: Harmonic[], pitchBend?, vibrato?}`
+- **ActiveNote**: `{oscillators[], gainNode, lfoOsc?, lfoGain?}`
 - **FallingNoteState**: `{id, note, stage: 'falling'|'bouncing'|'exiting', fallMs, noteHeight, leftPx, deltaY, showZone, zoneLeftPx, zoneTopPx, zoneWidth}`
 
 ### Event Flow
@@ -401,7 +415,7 @@ Practice → PracticePanel → dispatch practice:play/stop → Piano listens
 
 ### Testing Priorities
 
-1. **usePianoSynth**: Note play/stop, envelope timing, drum kit switching
+1. **usePianoSynth**: Note play/stop, envelope timing, frequency accuracy
 2. **useRecorder**: Record start/stop, save/load, playback scheduling
 3. **useTouchHandler**: Multi-touch tracking, velocity calculation, key detection
 4. **Integration**: Record → save → play → delete workflow

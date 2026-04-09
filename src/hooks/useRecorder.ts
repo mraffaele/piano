@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 
-export interface NoteEvent {
+interface NoteEvent {
   type: 'start' | 'end';
   note: string;
   frequency: number;
@@ -42,7 +42,6 @@ const saveTracksToStorage = (tracks: Track[]) => {
 
 interface UseRecorderReturn {
   state: RecorderState;
-  currentEvents: NoteEvent[];
   tracks: Track[];
   activeTrackId: string | null;
   startRecording: () => void;
@@ -60,7 +59,6 @@ interface UseRecorderReturn {
   recordNoteEnd: (note: string, frequency: number) => void;
   clearCurrentRecording: () => void;
   hasCurrentRecording: boolean;
-  canSave: boolean;
 }
 
 export const useRecorder = (): UseRecorderReturn => {
@@ -217,7 +215,6 @@ export const useRecorder = (): UseRecorderReturn => {
 
   return {
     state,
-    currentEvents,
     tracks,
     activeTrackId,
     startRecording,
@@ -231,6 +228,5 @@ export const useRecorder = (): UseRecorderReturn => {
     recordNoteEnd,
     clearCurrentRecording,
     hasCurrentRecording: currentEvents.length > 0,
-    canSave: currentEvents.length > 0 && state === 'idle',
   };
 };

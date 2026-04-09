@@ -1,6 +1,6 @@
 export async function unlockAudio(): Promise<boolean> {
   try {
-    const C = (window as any).AudioContext || (window as any).webkitAudioContext;
+    const C = window.AudioContext || window.webkitAudioContext;
     if (!C) return false;
 
     const ctx = new C();
@@ -22,11 +22,8 @@ export async function unlockAudio(): Promise<boolean> {
     try { src.stop(0); } catch {}
     try { await ctx.close(); } catch {}
 
-    // mark unlocked globally for quick checks
-    try { (window as any).__audioUnlocked = true; } catch {}
-
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 }

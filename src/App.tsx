@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Piano } from "./components/Piano";
-import RotateOverlay from "./components/RotateOverlay";
-import PracticePanel from "./components/PracticePanel";
+import { RotateOverlay } from "./components/RotateOverlay";
+import { PracticePanel } from "./components/PracticePanel";
 import "./index.css";
 import "./App.css";
 import { unlockAudio } from "./utils/unlockAudio";
@@ -31,7 +31,7 @@ function App() {
           <RotateOverlay />
           <Piano />
 
-          <PracticePanel onPlayNote={() => {}} onStopNote={() => {}} />
+          <PracticePanel />
         </>
       )}
     </div>

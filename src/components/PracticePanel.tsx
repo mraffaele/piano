@@ -1,9 +1,9 @@
 import React, { useState, useRef } from "react";
 import { NOTE_FREQUENCIES } from "../utils/noteFrequencies";
-import SONGS, { Song } from "../data/songs";
+import { SONGS } from "../data/songs";
 import "./PracticePanel.css";
 
-interface Props {
+interface PracticePanelProps {
   // optional callbacks for direct playback (keeps backwards compatibility)
   onPlayNote?: (note: string, frequency: number, velocity: number) => void;
   onStopNote?: (note: string) => void;
@@ -18,9 +18,7 @@ const DIFFICULTY_TEMPO_SCALE: Record<Difficulty, number> = {
   silly: 1.5,
 };
 
-// Song data is loaded from src/data/songs
-
-export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
+export const PracticePanel: React.FC<PracticePanelProps> = ({ onPlayNote, onStopNote }) => {
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(false);
   const [muted, setMuted] = useState(true);
@@ -41,13 +39,13 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
 
     const schedule = () => {
       const song = SONGS.find((s) => s.id === selectedSongId) || SONGS[0];
-      const events: Song["events"] = song.events;
+      const events = song.events;
       const tempo = song.tempo * DIFFICULTY_TEMPO_SCALE[difficulty];
       const beatSecondsLocal = 60 / tempo;
       const FALL_MS = 1800; // visual fall duration in ms
       const START_DELAY_MS = 1800; // give animations a short lead-in so first note doesn't rush
 
-       events.forEach((e: Song["events"][0]) => {
+       events.forEach((e) => {
          const whenMs = e.time * beatSecondsLocal * 1000 + START_DELAY_MS;
          // schedule visual start so the falling note has time to animate and
          // land at the play time. If the note is too close, shorten duration.
@@ -105,7 +103,7 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
 
       // End of sequence
       const totalBeats = Math.max(
-        ...events.map((ev: Song["events"][0]) => ev.time + ev.dur),
+        ...events.map((ev) => ev.time + ev.dur),
       );
       const endMs = totalBeats * beatSecondsLocal * 1000 + START_DELAY_MS;
       const endId = window.setTimeout(() => {
@@ -129,8 +127,7 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
      window.dispatchEvent(new CustomEvent("practice:clear"));
      // ensure any sounding notes are stopped
      const song = SONGS.find((s) => s.id === selectedSongId) || SONGS[0];
-     const events: Song["events"] = song.events;
-     events.forEach((e: Song["events"][0]) => {
+     song.events.forEach((e) => {
        window.dispatchEvent(
          new CustomEvent("practice:stop", { detail: { note: e.note, muted } }),
        );
@@ -158,7 +155,6 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
               setSelectedSongId(newId);
             }
           }}
-          style={{ marginLeft: 8 }}
         >
           {SONGS.map((s) => (
             <option key={s.id} value={s.id}>
@@ -234,13 +230,7 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
           />{" "}
           No sound
         </label>
-
-        {/* Falling notes always shown in practice mode; toggle removed */}
       </div>
-
-      {/* Notes view removed per request */}
     </div>
   );
 };
-
-export default PracticePanel;
