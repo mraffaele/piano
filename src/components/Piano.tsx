@@ -319,13 +319,7 @@ export const Piano: React.FC = () => {
         {/* Overlay for falling notes: positioned absolute to cover the piano area */}
         <div
           ref={fallingContainerRef}
-          style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            zIndex: 50,
-            overflow: "hidden",
-          }}
+          className="falling-notes-overlay"
         >
           {fallingNotes.map((note) => (
             <FallingNote key={note.id} state={note} />

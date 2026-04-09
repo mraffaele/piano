@@ -1,5 +1,6 @@
 import React from "react";
 import type { FallingNoteState } from "../hooks/useFallingNotes";
+import "./FallingNote.css";
 
 const NOTE_SIZE = 44;
 const ZONE_HEIGHT = 44;
@@ -10,8 +11,9 @@ interface FallingNoteProps {
 
 /**
  * Renders a single falling note element and its landing zone.
- * All animation is driven by CSS classes applied based on `state.stage`.
- * CSS custom properties pass the computed positions to @keyframes.
+ * All animation is driven by CSS classes based on `state.stage`.
+ * Only per-instance dynamic values (position, size, timing) are inline;
+ * everything else lives in FallingNote.css.
  */
 export const FallingNote: React.FC<FallingNoteProps> = React.memo(
   ({ state }) => {
@@ -30,53 +32,32 @@ export const FallingNote: React.FC<FallingNoteProps> = React.memo(
       zoneWidth,
     } = state;
 
-    const borderRadius = noteHeight === NOTE_SIZE ? "50%" : "12px";
-
-    // CSS custom properties drive the @keyframes animations
-    const noteStyle: React.CSSProperties & Record<string, string> = {
-      position: "absolute",
-      width: `${NOTE_SIZE}px`,
-      height: `${noteHeight}px`,
-      left: `${leftPx}px`,
-      top: `${startTop}px`,
-      transform: "translate(-50%, 0)",
-      borderRadius,
-      background: "linear-gradient(180deg, #ffefc2 0%, #ffcf5c 100%)",
-      boxShadow:
-        "0 10px 30px rgba(255, 150, 0, 0.28), 0 2px 6px rgba(0,0,0,0.25)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontWeight: "700",
-      color: "#111",
-      pointerEvents: "none",
-      willChange: "transform, opacity",
-      // CSS custom properties for keyframe animations
-      "--delta-y": `${deltaY}px`,
-      "--bounce-distance": `${bounceDistance}px`,
-      "--exit-distance": `${exitDistance}px`,
-      "--fall-ms": `${fallMs}ms`,
-    };
+    const shapeClass =
+      noteHeight === NOTE_SIZE ? "falling-note--circle" : "falling-note--rect";
 
     return (
       <>
         <div
-          className={`falling-note falling-note--${stage}`}
-          style={noteStyle}
+          className={`falling-note ${shapeClass} falling-note--${stage}`}
+          style={{
+            width: NOTE_SIZE,
+            height: noteHeight,
+            left: leftPx,
+            top: startTop,
+            "--delta-y": `${deltaY}px`,
+            "--bounce-distance": `${bounceDistance}px`,
+            "--exit-distance": `${exitDistance}px`,
+            "--fall-ms": `${fallMs}ms`,
+          } as React.CSSProperties}
         />
         {showZone && (
           <div
             className={`landing-zone ${stage === "bouncing" || stage === "exiting" ? "landing-zone--pulse" : ""}`}
             style={{
-              position: "absolute",
-              left: `${zoneLeftPx}px`,
-              top: `${zoneTopPx}px`,
-              width: `${zoneWidth}px`,
-              height: `${ZONE_HEIGHT}px`,
-              pointerEvents: "none",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              left: zoneLeftPx,
+              top: zoneTopPx,
+              width: zoneWidth,
+              height: ZONE_HEIGHT,
             }}
           />
         )}
