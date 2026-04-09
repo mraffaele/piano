@@ -51,24 +51,24 @@ export const useTouchHandler = ({ onNoteStart, onNoteEnd }: UseTouchHandlerProps
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
-    
+
     const touches = e.changedTouches;
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
       const element = document.elementFromPoint(touch.clientX, touch.clientY);
       const note = getNoteFromElement(element);
-      
+
       if (note && element) {
         const rect = element.getBoundingClientRect();
         const velocity = calculateVelocity(touch.clientY, rect.top, rect.height);
-        
+
         activeTouchesRef.current.set(touch.identifier, { note, touchId: touch.identifier });
         onNoteStart(note, velocity);
       }
     }
   }, [onNoteStart]);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
     
     const touches = e.changedTouches;
@@ -101,50 +101,55 @@ export const useTouchHandler = ({ onNoteStart, onNoteEnd }: UseTouchHandlerProps
             activeTouchesRef.current.delete(touch.identifier);
           }
         }
-      } else if (newNote && element) {
-        // New touch moved onto a key
-        const rect = element.getBoundingClientRect();
-        const velocity = calculateVelocity(touch.clientY, rect.top, rect.height);
-        
-        activeTouchesRef.current.set(touch.identifier, { note: newNote, touchId: touch.identifier });
-        onNoteStart(newNote, velocity);
       }
+      // IMPORTANT: Do NOT start a new note if touchState is undefined.
+      // This can happen if a touchmove arrives after touchend but before cleanup.
+      // The touch should be marked as releasing, so we skip it above.
     }
   }, [onNoteStart, onNoteEnd]);
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
     
     const touches = e.changedTouches;
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
-      // Mark as releasing to prevent spurious onNoteStart during lift-off
+      
+      // Mark as releasing IMMEDIATELY to prevent spurious onNoteStart during lift-off
       releasingTouchesRef.current.add(touch.identifier);
       
       const touchState = activeTouchesRef.current.get(touch.identifier);
       
       if (touchState) {
         onNoteEnd(touchState.note);
-        activeTouchesRef.current.delete(touch.identifier);
       }
       
-      // Clean up the releasing flag after a short delay to account for any
+      activeTouchesRef.current.delete(touch.identifier);
+      
+      // Clean up the releasing flag after a delay to account for any
       // remaining touch events that might be in the queue
+      // Use a longer window (100ms) to be safe on slow devices
       setTimeout(() => {
         releasingTouchesRef.current.delete(touch.identifier);
-      }, 50);
+      }, 100);
     }
   }, [onNoteEnd]);
 
   // Mouse support for desktop testing
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Ignore mouse events if we have active or releasing touches
+    // (iPad generates spurious mouse events during touch release)
+    if (activeTouchesRef.current.size > 0 || releasingTouchesRef.current.size > 0) {
+      return;
+    }
+    
     const element = e.target as Element;
     const note = getNoteFromElement(element);
     
     if (note) {
       const rect = element.getBoundingClientRect();
       const velocity = calculateVelocity(e.clientY, rect.top, rect.height);
-      
+
       activeTouchesRef.current.set(-1, { note, touchId: -1 });
       onNoteStart(note, velocity);
     }
@@ -166,9 +171,15 @@ export const useTouchHandler = ({ onNoteStart, onNoteEnd }: UseTouchHandlerProps
     }
   }, [onNoteEnd]);
 
-  const handleMouseEnter = useCallback((e: React.MouseEvent) => {
+   const handleMouseEnter = useCallback((e: React.MouseEvent) => {
     // Only trigger if mouse button is pressed
     if (e.buttons !== 1) return;
+    
+    // Ignore mouse events if we have active or releasing touches
+    // (iPad generates spurious mouse events during touch release)
+    if (activeTouchesRef.current.size > 0 || releasingTouchesRef.current.size > 0) {
+      return;
+    }
     
     const element = e.target as Element;
     const note = getNoteFromElement(element);

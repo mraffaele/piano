@@ -84,6 +84,9 @@ export const Piano: React.FC = () => {
     Record<string, Array<{ landingTimeMs: number; noteId: string }>>
   >({});
 
+  // Track the last note start call to prevent duplicate calls
+  const lastNoteStartRef = React.useRef<{ note: string; velocity: number; timestamp: number } | null>(null);
+
   // Listen for practice visual events to spawn falling notes
   React.useEffect(() => {
     const onVisualStart = (e: CustomEvent<PracticeVisualDetail>) => {
@@ -168,8 +171,16 @@ export const Piano: React.FC = () => {
     clearCurrentRecording,
   } = useRecorder();
 
-  const handleNoteStart = useCallback(
+   const handleNoteStart = useCallback(
     async (note: string, velocity: number) => {
+      // Debounce: prevent duplicate note starts within 10ms
+      const now = Date.now();
+      const last = lastNoteStartRef.current;
+      if (last && last.note === note && last.velocity === velocity && (now - last.timestamp) < 10) {
+        return;
+      }
+      lastNoteStartRef.current = { note, velocity, timestamp: now };
+      
       const frequency = NOTE_FREQUENCIES[note];
       if (frequency) {
         // Ensure audio context resumes within the user gesture by awaiting playNote
@@ -213,7 +224,7 @@ export const Piano: React.FC = () => {
     [playNote, recordNoteStart, fallingNotes, markAccuracy],
   );
 
-  const handleNoteEnd = useCallback(
+   const handleNoteEnd = useCallback(
     (note: string) => {
       const frequency = NOTE_FREQUENCIES[note];
       stopNote(note);

@@ -374,7 +374,8 @@ const GOOD_WINDOW = 150;    // ±150ms
 
 | Issue                  | Symptom                        | Cause                                            | Workaround                                                    | Location                                    |
 | ---------------------- | ------------------------------ | ------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------- |
-| iPad note replay       | Note plays again on release    | iOS spurious touchmove during lift-off           | `releasingTouchesRef` flags prevent start during 50ms window  | useTouchHandler.ts:78,122                   |
+| ~~iPad note replay~~   | ~~Note plays again on release~~ | ~~iOS spurious touchmove during lift-off~~       | ~~`releasingTouchesRef` flags prevent start during 50ms window~~ | ~~useTouchHandler.ts:78,122~~ |
+| **iPad synthetic mouse events** | **Note plays again on release** | **Safari generates synthetic mousedown on touch release, triggering replay** | **Ignore all mouse events when touch handlers are active/releasing** | **useTouchHandler.ts:149-168, 190-208** |
 | iOS audio unlock       | No sound on first touch        | AudioContext suspended by iOS autoplay policy    | `unlockAudio()` + `context.resume()` awaited                  | unlockAudio.ts, usePianoSynth.ts:47         |
 | Playback cuts off      | Last notes missing             | Scheduling uses timestamp only, ignores duration | Rely on release envelope, or estimate from next event         | useRecorder.ts                              |
 | Max 3 tracks           | Can't save more                | Hardcoded limit for localStorage                 | Increase limit if needed                                      | useRecorder.ts                              |
@@ -416,7 +417,7 @@ const GOOD_WINDOW = 150;    // ±150ms
 | `Piano.tsx`             | Orchestrate input, coordinate audio/recording, manage visual state, detect accuracy |
 | `usePianoSynth.ts`      | Web Audio synthesis (oscillators, envelopes, effects)                             |
 | `useRecorder.ts`        | Recording state machine, persistence, playback scheduling                         |
-| `useTouchHandler.ts`    | Multi-touch input, velocity calculation, state tracking                           |
+| `useTouchHandler.ts`    | Multi-touch input, velocity calculation, state tracking, synthetic mouse event filtering (iPad fix) |
 | `useFallingNotes.ts`    | React-driven falling note state machine, stage transitions, accuracy tracking     |
 | `soundTypes.ts`         | Piano sound preset definition                                                     |
 | `noteFrequencies.ts`    | Note names + frequency lookup (C4–C6)                                             |
