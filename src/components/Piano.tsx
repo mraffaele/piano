@@ -22,128 +22,209 @@ const BLACK_KEY_OFFSETS: Record<string, number> = {
 export const Piano: React.FC = () => {
   // Map of key note -> DOM element for aligning falling notes
   const keyRefs = React.useRef<Record<string, HTMLElement | null>>({});
-  const registerKeyRef = React.useCallback((note: string, el: HTMLElement | null) => {
-    keyRefs.current[note] = el;
-  }, []);
+  const registerKeyRef = React.useCallback(
+    (note: string, el: HTMLElement | null) => {
+      keyRefs.current[note] = el;
+    },
+    [],
+  );
 
   // Falling notes overlay container ref
   const fallingContainerRef = React.useRef<HTMLDivElement | null>(null);
 
   // Create and animate a falling note element that lands on the target key
   // durationMs: note duration in milliseconds, used to scale the visual height
-  const createAndAnimateFallingNote = React.useCallback((_note: string, targetRect: DOMRect, fallMs: number, durationMs?: number) => {
-    const container = fallingContainerRef.current;
-    if (!container) return;
-
-    const el = document.createElement('div');
-    el.className = 'falling-note';
-    // Visual indicator: larger circular dot (no text)
-    el.style.position = 'absolute';
-    const NOTE_SIZE = 44; // px - minimum width
-    const HEIGHT_PER_SECOND = 44; // px per second of duration
-    
-    // Calculate variable height based on duration
-    // Minimum 44px, scales linearly with duration
-    const noteHeight = durationMs 
-      ? Math.max(NOTE_SIZE, (durationMs / 1000) * HEIGHT_PER_SECOND)
-      : NOTE_SIZE;
-    
-    el.style.width = `${NOTE_SIZE}px`;
-    el.style.height = `${noteHeight}px`;
-    // Keep circular for minimum size, rounded rectangle for taller notes
-    el.style.borderRadius = noteHeight === NOTE_SIZE ? '50%' : '12px';
-    el.style.background = 'linear-gradient(180deg, #ffefc2 0%, #ffcf5c 100%)';
-    el.style.boxShadow = '0 10px 30px rgba(255, 150, 0, 0.28), 0 2px 6px rgba(0,0,0,0.25)';
-    el.style.display = 'flex';
-    el.style.alignItems = 'center';
-    el.style.justifyContent = 'center';
-    el.style.fontWeight = '700';
-    el.style.color = '#111';
-    // Position relative to container
-    const containerRect = container.getBoundingClientRect();
-    const startTop = -60; // starting top inside container
-    const startLeft = targetRect.left + targetRect.width / 2 - containerRect.left;
-    el.style.left = `${startLeft}px`;
-    el.style.top = `${startTop}px`;
-    el.style.transform = 'translate(-50%, 0)';
-    el.style.willChange = 'transform, top';
-    container.appendChild(el);
-
-    // compute landing zone and final Y inside the container so the note
-    // lands dead center of the landing zone. Zone is fixed height to indicate
-    // when to start pressing; falling note height indicates duration.
-    const ZONE_HEIGHT = 44; // fixed height, matches NOTE_SIZE
-    const zoneCenter = targetRect.top - containerRect.top + targetRect.height * 0.88;
-    const zoneTop = zoneCenter - ZONE_HEIGHT / 2;
-    const endTop = zoneCenter - noteHeight / 2; // dot's top so its center is zoneCenter
-    const deltaY = endTop - startTop;
-
-    // Create a landing zone overlay at the target key so users can see
-    // where the note will land. Zone is fixed height to indicate when to press.
-    const zone = document.createElement('div');
-    zone.className = 'landing-zone';
-    zone.style.position = 'absolute';
-    // Landing zone is fixed height to indicate when to start pressing
-    const zoneWidth = Math.max(64, targetRect.width * 1.05);
-    zone.style.width = `${zoneWidth}px`;
-    zone.style.height = `${ZONE_HEIGHT}px`;
-    const zoneLeft = targetRect.left + targetRect.width / 2 - containerRect.left - zoneWidth / 2;
-    zone.style.left = `${zoneLeft}px`;
-    zone.style.top = `${zoneTop}px`;
-    zone.style.pointerEvents = 'none';
-    zone.style.display = 'flex';
-    zone.style.alignItems = 'center';
-    zone.style.justifyContent = 'center';
-    container.appendChild(zone);
-
-    // Animate the falling note from its start position down to the landing
-    // zone using a linear timing so the landing time matches audio.
-    const anim = el.animate([
-      { transform: `translate(-50%, 0px)`, opacity: 1 },
-      { transform: `translate(-50%, ${deltaY}px)`, opacity: 1 },
-    ], { duration: Math.max(0, fallMs), easing: 'linear' });
-
-    anim.onfinish = () => {
-       // landing bounce for the falling note
-       const bounceDistance = Math.max(4, noteHeight * 0.15); // bounce proportional to height
-       el.animate([
-         { transform: `translate(-50%, ${deltaY}px)` },
-         { transform: `translate(-50%, ${deltaY - bounceDistance}px)` },
-         { transform: `translate(-50%, ${deltaY}px)` },
-       ], { duration: 220, easing: 'cubic-bezier(.2,.8,.3,1)' });
-
-      // Pulse the landing zone to make the landing point obvious
-      zone.animate([
-        { transform: 'scale(1)', opacity: 0.85 },
-        { transform: 'scale(1.08)', opacity: 1 },
-        { transform: 'scale(1)', opacity: 0.6 },
-      ], { duration: 300, easing: 'ease-out' });
-
-      setTimeout(() => { el.remove(); }, 500);
-      setTimeout(() => { zone.remove(); }, 700);
-    };
-
-    // cleanup if needed after a max time
-    setTimeout(() => { if (el.parentElement) el.remove(); if (zone.parentElement) zone.remove(); }, fallMs + 4000);
-  }, []);
-
-  // Listen for practice visual events to spawn falling notes
-  React.useEffect(() => {
-    const onVisualStart = (e: any) => {
-      const { note, fallMs, durationMs } = e.detail || {};
-      if (!note) return;
-      const keyEl = keyRefs.current[note];
+  const createAndAnimateFallingNote = React.useCallback(
+    (
+      _note: string,
+      targetRect: DOMRect,
+      fallMs: number,
+      durationMs?: number,
+    ) => {
       const container = fallingContainerRef.current;
-      if (!keyEl || !container) return;
-      const keyRect = keyEl.getBoundingClientRect();
-      createAndAnimateFallingNote(note, keyRect, fallMs ?? 1200, durationMs);
-    };
-    window.addEventListener('practice:visualStart', onVisualStart as EventListener);
-    return () => window.removeEventListener('practice:visualStart', onVisualStart as EventListener);
-  }, [createAndAnimateFallingNote]);
+      if (!container) return;
+
+      const el = document.createElement("div");
+      el.className = "falling-note";
+      // Visual indicator: larger circular dot (no text)
+      el.style.position = "absolute";
+      const NOTE_SIZE = 44; // px - minimum width
+      const HEIGHT_PER_SECOND = 44; // px per second of duration
+
+      // Calculate variable height based on duration
+      // Minimum 44px, scales linearly with duration
+      const noteHeight = durationMs
+        ? Math.max(NOTE_SIZE, (durationMs / 1000) * HEIGHT_PER_SECOND)
+        : NOTE_SIZE;
+
+      el.style.width = `${NOTE_SIZE}px`;
+      el.style.height = `${noteHeight}px`;
+      // Keep circular for minimum size, rounded rectangle for taller notes
+      el.style.borderRadius = noteHeight === NOTE_SIZE ? "50%" : "12px";
+      el.style.background = "linear-gradient(180deg, #ffefc2 0%, #ffcf5c 100%)";
+      el.style.boxShadow =
+        "0 10px 30px rgba(255, 150, 0, 0.28), 0 2px 6px rgba(0,0,0,0.25)";
+      el.style.display = "flex";
+      el.style.alignItems = "center";
+      el.style.justifyContent = "center";
+      el.style.fontWeight = "700";
+      el.style.color = "#111";
+      // Position relative to container
+      const containerRect = container.getBoundingClientRect();
+      const startTop = -60; // starting top inside container
+      const startLeft =
+        targetRect.left + targetRect.width / 2 - containerRect.left;
+      el.style.left = `${startLeft}px`;
+      el.style.top = `${startTop}px`;
+      el.style.transform = "translate(-50%, 0)";
+      el.style.willChange = "transform, top";
+      container.appendChild(el);
+
+      // compute landing zone and final Y inside the container so the note
+      // lands dead center of the landing zone. Zone is fixed height to indicate
+      // when to start pressing; falling note height indicates duration.
+      const ZONE_HEIGHT = 44; // fixed height, matches NOTE_SIZE
+      const zoneCenter =
+        targetRect.top - containerRect.top + targetRect.height * 0.88;
+      const zoneTop = zoneCenter - ZONE_HEIGHT / 2;
+      const endTop = zoneCenter - noteHeight / 2; // dot's top so its center is zoneCenter
+      const deltaY = endTop - startTop;
+
+      // Create a landing zone overlay at the target key so users can see
+      // where the note will land. Zone is fixed height to indicate when to press.
+      const zone = document.createElement("div");
+      zone.className = "landing-zone";
+      zone.style.position = "absolute";
+      // Landing zone is fixed height to indicate when to start pressing
+      const zoneWidth = Math.max(64, targetRect.width * 1.05);
+      zone.style.width = `${zoneWidth}px`;
+      zone.style.height = `${ZONE_HEIGHT}px`;
+      const zoneLeft =
+        targetRect.left +
+        targetRect.width / 2 -
+        containerRect.left -
+        zoneWidth / 2;
+      zone.style.left = `${zoneLeft}px`;
+      zone.style.top = `${zoneTop}px`;
+      zone.style.pointerEvents = "none";
+      zone.style.display = "flex";
+      zone.style.alignItems = "center";
+      zone.style.justifyContent = "center";
+      container.appendChild(zone);
+
+      // Animate the falling note from its start position down to the landing
+      // zone using a linear timing so the landing time matches audio.
+      const anim = el.animate(
+        [
+          { transform: `translate(-50%, 0px)`, opacity: 1 },
+          { transform: `translate(-50%, ${deltaY}px)`, opacity: 1 },
+        ],
+        { duration: Math.max(0, fallMs), easing: "linear" },
+      );
+
+      anim.onfinish = () => {
+        // landing bounce for the falling note
+        const bounceDistance = Math.max(4, noteHeight * 0.15); // bounce proportional to height
+        const bounceAnim = el.animate(
+          [
+            { transform: `translate(-50%, ${deltaY}px)` },
+            { transform: `translate(-50%, ${deltaY - bounceDistance}px)` },
+            { transform: `translate(-50%, ${deltaY}px)` },
+          ],
+          { duration: 220, easing: "cubic-bezier(.2,.8,.3,1)" },
+        );
+
+        // Pulse the landing zone to make the landing point obvious
+        zone.animate(
+          [
+            { transform: "scale(1)", opacity: 0.85 },
+            { transform: "scale(1.08)", opacity: 1 },
+            { transform: "scale(1)", opacity: 0.6 },
+          ],
+          { duration: 300, easing: "ease-out" },
+        );
+
+        // After bounce, animate note down and out of view
+        bounceAnim.onfinish = () => {
+          const containerHeight = container.getBoundingClientRect().height;
+          const exitDistance = containerHeight + 100; // animate past bottom with margin
+          const blackKeyExitDistance = containerHeight * 0.6 + 100; // animate past bottom with margin
+          const isBlackKey = _note.includes("#");
+          const exitDuration = 400; // faster fade for black keys
+          el.animate(
+            [
+              { transform: `translate(-50%, ${deltaY}px)`, opacity: 1 },
+              {
+                transform: `translate(-50%, ${isBlackKey ? blackKeyExitDistance : exitDistance}px)`,
+                opacity: 0,
+              },
+            ],
+            { duration: exitDuration, easing: "cubic-bezier(0.2, 0, 0.8, 1)" },
+          );
+
+          setTimeout(() => {
+            el.remove();
+          }, exitDuration);
+        };
+
+        setTimeout(() => {
+          zone.remove();
+        }, 700);
+      };
+
+      // cleanup if needed after a max time
+      setTimeout(() => {
+        if (el.parentElement) el.remove();
+        if (zone.parentElement) zone.remove();
+      }, fallMs + 4000);
+    },
+    [],
+  );
+
+   // Listen for practice visual events to spawn falling notes
+   React.useEffect(() => {
+     const onVisualStart = (e: any) => {
+       const { note, fallMs, durationMs } = e.detail || {};
+       if (!note) return;
+       const keyEl = keyRefs.current[note];
+       const container = fallingContainerRef.current;
+       if (!keyEl || !container) return;
+       const keyRect = keyEl.getBoundingClientRect();
+       createAndAnimateFallingNote(note, keyRect, fallMs ?? 1200, durationMs);
+     };
+
+     const onPracticeClear = () => {
+       // Clear all falling notes when practice stops
+       const container = fallingContainerRef.current;
+       if (container) {
+         container.innerHTML = "";
+       }
+     };
+
+     window.addEventListener(
+       "practice:visualStart",
+       onVisualStart as EventListener,
+     );
+     window.addEventListener(
+       "practice:clear",
+       onPracticeClear as EventListener,
+     );
+     return () => {
+       window.removeEventListener(
+         "practice:visualStart",
+         onVisualStart as EventListener,
+       );
+       window.removeEventListener(
+         "practice:clear",
+         onPracticeClear as EventListener,
+       );
+     };
+   }, [createAndAnimateFallingNote]);
   // Track active play counts per note so overlapping plays of the same
   // note don't prematurely clear the visual state when one instance stops.
-  const [pressedCounts, setPressedCounts] = useState<Record<string, number>>({});
+  const [pressedCounts, setPressedCounts] = useState<Record<string, number>>(
+    {},
+  );
   const [soundType, setSoundType] = useState<string>("piano");
   const [playbackSoundType, setPlaybackSoundType] = useState<string>("piano");
 
@@ -279,8 +360,14 @@ export const Piano: React.FC = () => {
     window.addEventListener("practice:play", onPracticePlay as EventListener);
     window.addEventListener("practice:stop", onPracticeStop as EventListener);
     return () => {
-      window.removeEventListener("practice:play", onPracticePlay as EventListener);
-      window.removeEventListener("practice:stop", onPracticeStop as EventListener);
+      window.removeEventListener(
+        "practice:play",
+        onPracticePlay as EventListener,
+      );
+      window.removeEventListener(
+        "practice:stop",
+        onPracticeStop as EventListener,
+      );
     };
   }, [playbackPlayNote, playbackStopNote]);
 
@@ -304,8 +391,8 @@ export const Piano: React.FC = () => {
       stopRecording();
     } else if (recorderState === "playing") {
       stopPlayback();
-        // Clear any pressed notes when stopping playback
-        setPressedCounts({});
+      // Clear any pressed notes when stopping playback
+      setPressedCounts({});
     }
   }, [recorderState, stopRecording, stopPlayback]);
 
@@ -370,7 +457,15 @@ export const Piano: React.FC = () => {
 
       <div className="piano-container" {...touchHandlers}>
         {/* Overlay for falling notes: positioned absolute to cover the piano area */}
-        <div ref={fallingContainerRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 50 }} />
+        <div
+          ref={fallingContainerRef}
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 50,
+          }}
+        />
         <div className="piano">
           {/* White keys */}
           {whiteKeys.map((noteInfo) => (
@@ -378,7 +473,7 @@ export const Piano: React.FC = () => {
               key={noteInfo.note}
               note={noteInfo.note}
               isBlack={false}
-               isPressed={Boolean(pressedCounts[noteInfo.note])}
+              isPressed={Boolean(pressedCounts[noteInfo.note])}
               registerKeyRef={registerKeyRef}
               {...mouseHandlers}
             />
@@ -396,7 +491,7 @@ export const Piano: React.FC = () => {
               <Key
                 note={noteInfo.note}
                 isBlack={true}
-                 isPressed={Boolean(pressedCounts[noteInfo.note])}
+                isPressed={Boolean(pressedCounts[noteInfo.note])}
                 registerKeyRef={registerKeyRef}
                 {...mouseHandlers}
               />

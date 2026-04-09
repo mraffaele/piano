@@ -113,19 +113,21 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
     schedule();
   };
 
-  const stop = () => {
-    clearScheduled();
-    setPlaying(false);
-    // ensure any sounding notes are stopped
-    const song = SONGS.find((s) => s.id === selectedSongId) || SONGS[0];
-    const events: Song["events"] = song.events;
-    events.forEach((e: Song["events"][0]) => {
-      window.dispatchEvent(
-        new CustomEvent("practice:stop", { detail: { note: e.note, muted } }),
-      );
-      if (onStopNote) onStopNote(e.note);
-    });
-  };
+   const stop = () => {
+     clearScheduled();
+     setPlaying(false);
+     // Dispatch clear event to remove all falling notes
+     window.dispatchEvent(new CustomEvent("practice:clear"));
+     // ensure any sounding notes are stopped
+     const song = SONGS.find((s) => s.id === selectedSongId) || SONGS[0];
+     const events: Song["events"] = song.events;
+     events.forEach((e: Song["events"][0]) => {
+       window.dispatchEvent(
+         new CustomEvent("practice:stop", { detail: { note: e.note, muted } }),
+       );
+       if (onStopNote) onStopNote(e.note);
+     });
+   };
 
   return (
     <div className="practice-panel">

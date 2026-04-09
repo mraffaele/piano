@@ -15,6 +15,67 @@ export interface Song {
 
 export const SONGS: Song[] = [
   {
+    //https://www.youtube.com/watch?v=oIqooYFlPJE
+    id: "despacito",
+    title: "Despacito",
+    tempo: 80,
+
+    events: [
+      // { time: 0, note: "E4", dur: 1 },
+      { time: 0.75, note: "C5", dur: 1 },
+      // { time: 1.75, note: "D4", dur: 1 },
+      { time: 2.5, note: "B4", dur: 1 },
+      // { time: 3.5, note: "C4", dur: 1 },
+      { time: 4.5, note: "A4", dur: 1 },
+      { time: 5, note: "E4", dur: 1 },
+      //
+      { time: 7, note: "E4", dur: 0.5 },
+      { time: 7.5, note: "E4", dur: 0.5 },
+      { time: 8, note: "E4", dur: 0.5 },
+      { time: 8.5, note: "E4", dur: 0.5 },
+      { time: 9, note: "E4", dur: 1 },
+      { time: 9.5, note: "A4", dur: 0.5 },
+      { time: 10, note: "A4", dur: 0.5 },
+      { time: 10.5, note: "A4", dur: 0.5 },
+      { time: 11, note: "A4", dur: 1 },
+      { time: 12, note: "G4", dur: 0.75 },
+      { time: 12.5, note: "A4", dur: 1 },
+      { time: 13.5, note: "F4", dur: 1 },
+      //
+      { time: 15.5, note: "F4", dur: 0.5 },
+      { time: 16, note: "F4", dur: 0.5 },
+      { time: 16.5, note: "F4", dur: 0.5 },
+      { time: 17, note: "F4", dur: 0.5 },
+      { time: 17.5, note: "F4", dur: 1 },
+      { time: 18, note: "A4", dur: 0.5 },
+      { time: 18.5, note: "A4", dur: 0.5 },
+      { time: 19, note: "A4", dur: 0.5 },
+      { time: 19.5, note: "A4", dur: 1 },
+      { time: 20.5, note: "B4", dur: 0.75 },
+      { time: 21, note: "C5", dur: 1 },
+      { time: 22, note: "G4", dur: 1 },
+      //
+      { time: 24, note: "G4", dur: 0.5 },
+      { time: 24.5, note: "G4", dur: 0.5 },
+      { time: 25, note: "G4", dur: 0.5 },
+      { time: 25.5, note: "G4", dur: 0.5 },
+      { time: 26, note: "G4", dur: 1 },
+      { time: 26.5, note: "C5", dur: 0.5 },
+      { time: 27, note: "C5", dur: 0.5 },
+      { time: 27.5, note: "C5", dur: 0.5 },
+      { time: 28, note: "C5", dur: 1 },
+      { time: 29, note: "D5", dur: 0.75 },
+      { time: 29.5, note: "D5", dur: 1 },
+      { time: 30.5, note: "B4", dur: 1 },
+      //
+
+      { time: 32.25, note: "C5", dur: 1 },
+      { time: 34, note: "B4", dur: 1 },
+      { time: 36, note: "A4", dur: 1 },
+      { time: 36.5, note: "E4", dur: 1 },
+    ],
+  },
+  {
     id: "twinkle",
     title: "Twinkle Twinkle Little Star",
     tempo: 80,
