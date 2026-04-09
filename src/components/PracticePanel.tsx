@@ -9,12 +9,22 @@ interface Props {
   onStopNote?: (note: string) => void;
 }
 
+type Difficulty = "easy" | "medium" | "hard" | "silly";
+
+const DIFFICULTY_TEMPO_SCALE: Record<Difficulty, number> = {
+  easy: 0.5,
+  medium: 0.75,
+  hard: 1.0,
+  silly: 1.5,
+};
+
 // Song data is loaded from src/data/songs
 
 export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(false);
   const [muted, setMuted] = useState(true);
+  const [difficulty, setDifficulty] = useState<Difficulty>("hard");
   const [selectedSongId, setSelectedSongId] = useState<string>(
     SONGS[0]?.id ?? "",
   );
@@ -32,8 +42,7 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
     const schedule = () => {
       const song = SONGS.find((s) => s.id === selectedSongId) || SONGS[0];
       const events: Song["events"] = song.events;
-      const tempo = song.tempo;
-      // recompute beatSeconds in case tempo differs per song
+      const tempo = song.tempo * DIFFICULTY_TEMPO_SCALE[difficulty];
       const beatSecondsLocal = 60 / tempo;
       const FALL_MS = 1800; // visual fall duration in ms
       const START_DELAY_MS = 1800; // give animations a short lead-in so first note doesn't rush
@@ -156,6 +165,25 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
               {s.title}
             </option>
           ))}
+        </select>
+        <select
+          className="practice-difficulty-select"
+          value={difficulty}
+          onChange={(e) => {
+            const newDiff = e.target.value as Difficulty;
+            if (playing) {
+              stop();
+              setDifficulty(newDiff);
+              setTimeout(() => play(), 10);
+            } else {
+              setDifficulty(newDiff);
+            }
+          }}
+        >
+          <option value="easy">Easy (50%)</option>
+          <option value="medium">Medium (75%)</option>
+          <option value="hard">Hard (100%)</option>
+          <option value="silly">Silly (150%)</option>
         </select>
         <div className="practice-controls">
           <button
