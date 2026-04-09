@@ -19,13 +19,14 @@
 **Core Features**: 25-key piano (C4–C6), 40+ instruments, multi-touch with velocity, recording (3 tracks max), practice mode with falling notes, localStorage persistence.
 
 **Key Files**:
-- `soundTypes.ts` (1098 lines): 40+ instrument presets
-- `usePianoSynth.ts` (399 lines): Web Audio synthesis
-- `Piano.tsx` (398 lines): Main coordinator
-- `useRecorder.ts` (236 lines): Recording/playback
-- `useTouchHandler.ts` (199 lines): Multi-touch input
-
-**Total**: ~2000 lines core + 1000+ lines styling
+- `soundTypes.ts`: 40+ instrument presets
+- `usePianoSynth.ts`: Web Audio synthesis
+- `Piano.tsx`: Main coordinator
+- `useRecorder.ts`: Recording/playback
+- `useTouchHandler.ts`: Multi-touch input
+- `useFallingNotes.ts`: React-driven falling note state machine
+- `FallingNote.tsx`: Falling note visual component
+- `PracticePanel.tsx`: Practice mode with difficulty selection
 
 ---
 
@@ -36,21 +37,23 @@
 App.tsx
 ├── RotateOverlay
 ├── Piano (coordinator)
+│   ├── FallingNote[] (React-driven falling note visuals)
 │   ├── Key (25 keys)
 │   ├── RecordingControls
 │   ├── TrackList
 │   └── SoundSelector (disabled)
-└── PracticePanel (practice mode)
+└── PracticePanel (practice mode + difficulty selection)
 ```
 
 ### State Management
 
 | Layer | Location | Data |
 |-------|----------|------|
-| **React State** | Component-level | `pressedCounts`, `soundType`, `playbackSoundType`, `selectedSong`, `isPlaying`, `isMuted` |
+| **React State** | Component-level | `pressedCounts`, `soundType`, `playbackSoundType`, `selectedSong`, `isPlaying`, `isMuted`, `difficulty` |
 | **Hook Refs** | usePianoSynth | `audioContextRef`, `activeNotesRef`, `masterGainRef` |
 | | useRecorder | `currentEvents`, `tracks`, `activeTrackId`, `recordingStartTime` |
 | | useTouchHandler | `activeTouchesRef`, `releasingTouchesRef` |
+| | useFallingNotes | `fallingNotes[]`, `timeoutsRef` |
 | **Persistent** | localStorage['piano-tracks'] | Track[] (max 3) |
 
 ### Data Flows
@@ -72,7 +75,7 @@ App.tsx
 | Channel | Direction | Events |
 |---------|-----------|--------|
 | **Direct callbacks** | Piano ↔ Children | `onNoteStart`, `onNoteEnd`, `onRecord`, `onSave` |
-| **Custom events** | PracticePanel → Piano | `practice:visualStart`, `practice:play`, `practice:stop` |
+| **Custom events** | PracticePanel → Piano | `practice:visualStart`, `practice:play`, `practice:stop`, `practice:clear` |
 | **Hook returns** | Hooks → Piano | `playNote()`, `stopNote()`, `recordNoteStart()`, `playTrack()` |
 
 ---
@@ -83,10 +86,10 @@ App.tsx
 
 | Component | Purpose | Key State |
 |-----------|---------|-----------|
-| **Piano.tsx** (398 lines) | Render 25 keys, coordinate audio/recording/input, falling notes animation | `pressedCounts`, `soundType`, `playbackSoundType` |
-| **PracticePanel.tsx** (214 lines) | Song selection, playback with visual cues | `selectedSong`, `isPlaying`, `isLooping`, `isMuted` |
-| **RecordingControls.tsx** (89 lines) | Record/Save/Clear UI, state indicators | Button display based on `recorderState` |
-| **TrackList.tsx** (123 lines) | List saved tracks, play/delete/rename | Track array, active track ID |
+| **Piano.tsx** | Render 25 keys, coordinate audio/recording/input, falling notes animation | `pressedCounts`, `soundType`, `playbackSoundType` |
+| **PracticePanel.tsx** | Song selection, playback with visual cues, difficulty selection | `selectedSong`, `isPlaying`, `isLooping`, `isMuted`, `difficulty` |
+| **RecordingControls.tsx** | Record/Save/Clear UI, state indicators | Button display based on `recorderState` |
+| **TrackList.tsx** | List saved tracks, play/delete/rename | Track array, active track ID |
 
 ### Minor Components
 
@@ -94,6 +97,7 @@ App.tsx
 |-----------|---------|
 | **App.tsx** | Splash screen, audio unlock, root layout |
 | **Key.tsx** | Individual key rendering, DOM registration |
+| **FallingNote.tsx** | Single falling note + landing zone rendering (CSS-animated) |
 | **SoundSelector.tsx** | Sound selection UI (currently disabled) |
 | **RotateOverlay.tsx** | Portrait mode warning |
 
@@ -101,7 +105,7 @@ App.tsx
 
 ## Hook Reference
 
-### `usePianoSynth.ts` (399 lines)
+### `usePianoSynth.ts`
 **Purpose**: Web Audio API synthesis engine
 
 **Returns**: `{ playNote(note, freq, velocity), stopNote(note) }`
@@ -119,7 +123,7 @@ App.tsx
 
 ---
 
-### `useRecorder.ts` (236 lines)
+### `useRecorder.ts`
 **Purpose**: Recording state machine + localStorage persistence
 
 **Returns**: 
@@ -141,7 +145,7 @@ App.tsx
 
 ---
 
-### `useTouchHandler.ts` (199 lines)
+### `useTouchHandler.ts`
 **Purpose**: Multi-touch + mouse input with velocity sensitivity
 
 **Returns**: `{ touchHandlers: {onTouchStart, onTouchMove, onTouchEnd, onTouchCancel}, mouseHandlers: {onMouseDown, onMouseUp, onMouseEnter, onMouseLeave}, onNoteStart, onNoteEnd }`
@@ -155,6 +159,27 @@ App.tsx
 **Handlers**:
 - `handleTouchStart/Move/End`: DOM traversal via `elementFromPoint()`, velocity calc, state tracking
 - Mouse handlers: Same logic, single "touch" ID = -1
+
+---
+
+### `useFallingNotes.ts`
+**Purpose**: React-driven falling note state machine (replaced previous DOM-based approach in Piano.tsx)
+
+**Returns**: `{ fallingNotes: FallingNoteState[], addFallingNote(...), clearAll() }`
+
+**Key Functions**:
+- `addFallingNote(note, keyRect, containerRect, containerHeight, fallMs, durationMs?)`: Creates a new falling note state entry, calculates all positions/dimensions, schedules stage transitions
+- `clearAll()`: Cancels all pending timeouts and removes all notes from state
+
+**Animation Stages**: `"falling"` → `"bouncing"` → `"exiting"` (each drives a CSS class)
+
+**Stage Durations**: BOUNCE_MS = 220, EXIT_MS = 400, ZONE_LINGER_MS = 700
+
+**Note Height**: When `durationMs` is provided, height scales at 44px/second (min 44px). Circular shape for minimum size, rounded rectangle for longer notes.
+
+**State**: `fallingNotes[]` (React state), `timeoutsRef` (tracks pending stage transition timeouts for cleanup)
+
+**Lifecycle**: Note added → falls linearly → bounces on landing → slides down + fades out → removed from state
 
 ---
 
@@ -214,7 +239,7 @@ App.tsx
 
 **Key Pressing** (`pressedCounts`): `Record<note, count>` tracks overlapping presses. Prevents premature visual release if same note played twice.
 
-**Falling Notes** (practice mode): Listens for `practice:visualStart`, creates animated div from top to key, bounce on landing, cleanup 700ms later.
+**Falling Notes** (practice mode): Managed by `useFallingNotes` hook as React state. Listens for `practice:visualStart` (with `durationMs` for note height), creates `FallingNoteState` entries rendered by `FallingNote` component. CSS animations drive the motion through stages (falling → bouncing → exiting). `practice:clear` event triggers `clearAll()` to remove all notes immediately.
 
 **Recording Feedback**: Status indicators "REC", "LOOPING", "UNSAVED"
 
@@ -226,15 +251,19 @@ App.tsx
 
 **Song Definition** (data/songs.ts): `{id, title, tempo: BPM, events: [{time: beat, note, dur: beats}]}`
 
+**Difficulty System**: 4 levels scale the song tempo — easy (50%), medium (75%), hard (100%), silly (150%). Effective tempo = `song.tempo * DIFFICULTY_TEMPO_SCALE[difficulty]`. Changing difficulty while playing restarts playback.
+
 **Playback Flow**:
-1. Dispatch `practice:visualStart` → falling animation
+1. Dispatch `practice:visualStart` with `durationMs` → falling animation (note height proportional to duration)
 2. Wait `FALL_MS` (1800ms)
 3. Dispatch `practice:play` with audio (respects `isMuted`)
 4. Wait note duration
 5. Dispatch `practice:stop`
 6. Loop if `isLooping`
 
-**Timing**: `beatMs = (60 / tempo) * 1000`, `timeMs = event.time * beatMs`
+**Stop Flow**: Dispatch `practice:clear` → clears all falling notes immediately, then stops all sounding notes.
+
+**Timing**: `beatMs = (60 / effectiveTempo) * 1000`, `timeMs = event.time * beatMs`
 **Muting**: `isMuted` flag checked, audio only (visuals unaffected)
 
 ---
@@ -319,7 +348,7 @@ App.tsx
 
 **Optimizations**: Lazy AudioContext, ref-based DOM access, cached noise buffer, active note tracking, useMemo on key separation
 
-**Bottlenecks**: Falling notes DOM manipulation, timeout scheduling, localStorage serialization, touch event handlers
+**Bottlenecks**: Falling notes React re-renders (many simultaneous notes), timeout scheduling, localStorage serialization, touch event handlers
 
 **Scaling**: >100 tracks? Implement virtual scroll. Better timing? Use requestAnimationFrame. Quota issues? Implement cleanup UI. Touch lag? Profile with DevTools.
 
@@ -335,12 +364,14 @@ App.tsx
 | `usePianoSynth.ts` | Web Audio synthesis (oscillators, envelopes, effects) |
 | `useRecorder.ts` | Recording state machine, persistence, playback scheduling |
 | `useTouchHandler.ts` | Multi-touch input, velocity calculation, state tracking |
+| `useFallingNotes.ts` | React-driven falling note state machine, stage transitions |
 | `soundTypes.ts` | 40+ instrument synthesis presets |
 | `noteFrequencies.ts` | Note names + frequency lookup (C4–C6) |
 | `Key.tsx` | Key rendering + DOM registration |
+| `FallingNote.tsx` | Single falling note + landing zone rendering |
 | `RecordingControls.tsx` | Record/save/clear UI |
 | `TrackList.tsx` | Track list display + management |
-| `PracticePanel.tsx` | Song selection + event scheduling |
+| `PracticePanel.tsx` | Song selection + event scheduling + difficulty |
 
 ### Critical Data Structures
 
@@ -348,6 +379,7 @@ App.tsx
 - **NoteEvent**: `{type: 'start'|'end', note, frequency, velocity, timestamp}`
 - **SoundPreset**: `{name, envelope, harmonics: Harmonic[], pitchBend?, vibrato?, isDrumKit?}`
 - **ActiveNote**: `{oscillators[], gainNode, lfoOsc?, lfoGain?, noiseSource?}`
+- **FallingNoteState**: `{id, note, stage: 'falling'|'bouncing'|'exiting', fallMs, noteHeight, leftPx, deltaY, showZone, zoneLeftPx, zoneTopPx, zoneWidth}`
 
 ### Event Flow
 
