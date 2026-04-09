@@ -38,19 +38,21 @@ export const PracticePanel: React.FC<Props> = ({ onPlayNote, onStopNote }) => {
       const FALL_MS = 1800; // visual fall duration in ms
       const START_DELAY_MS = 1800; // give animations a short lead-in so first note doesn't rush
 
-      events.forEach((e: Song["events"][0]) => {
-        const whenMs = e.time * beatSecondsLocal * 1000 + START_DELAY_MS;
-        // schedule visual start so the falling note has time to animate and
-        // land at the play time. If the note is too close, shorten duration.
-        const visualDuration = Math.min(FALL_MS, whenMs);
-        const visualStartMs = Math.max(0, whenMs - visualDuration);
-        const visualId = window.setTimeout(() => {
-          window.dispatchEvent(
-            new CustomEvent("practice:visualStart", {
-              detail: { note: e.note, fallMs: visualDuration },
-            }),
-          );
-        }, visualStartMs);
+       events.forEach((e: Song["events"][0]) => {
+         const whenMs = e.time * beatSecondsLocal * 1000 + START_DELAY_MS;
+         // schedule visual start so the falling note has time to animate and
+         // land at the play time. If the note is too close, shorten duration.
+         const visualDuration = Math.min(FALL_MS, whenMs);
+         const visualStartMs = Math.max(0, whenMs - visualDuration);
+         // Calculate note duration in milliseconds for the falling note height
+         const noteDurationMs = e.dur * beatSecondsLocal * 1000;
+         const visualId = window.setTimeout(() => {
+           window.dispatchEvent(
+             new CustomEvent("practice:visualStart", {
+               detail: { note: e.note, fallMs: visualDuration, durationMs: noteDurationMs },
+             }),
+           );
+         }, visualStartMs);
         timeoutsRef.current.push(visualId);
         const playId = window.setTimeout(() => {
           const freq = NOTE_FREQUENCIES[e.note];

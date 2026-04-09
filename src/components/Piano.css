@@ -1,6 +1,6 @@
 .piano-container {
   width: 100%;
-  height: calc(100vh - 55px); /* Account for practice panel height */
+  height: calc(100dvh - 55px); /* Account for practice panel height */
   display: flex;
   align-items: stretch;
   justify-content: center;
@@ -33,17 +33,20 @@
   font-weight: 600;
   font-size: 14px;
   transform: translate(-50%, 0);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   pointer-events: none;
 }
 
 /* Landing zone highlights where the falling note will land */
 .landing-zone {
-  background: rgba(3, 169, 244, 0.14);
-  border: 1px solid rgba(3, 169, 244, 0.55);
+  background: rgba(3, 169, 244, 0.25);
+  border: 2px solid rgba(3, 169, 244, 0.8);
   border-radius: 8px;
-  backdrop-filter: blur(2px);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.16);
+  backdrop-filter: blur(3px);
+  box-shadow: 
+    0 0 12px rgba(3, 169, 244, 0.4),
+    0 6px 18px rgba(0, 0, 0, 0.16),
+    inset 0 0 8px rgba(3, 169, 244, 0.2);
   pointer-events: none;
   display: flex;
   align-items: center;
