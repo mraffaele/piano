@@ -63,7 +63,7 @@ export const FallingNote: React.FC<FallingNoteProps> = React.memo(
             }}
           />
         )}
-        {accuracy && (
+        {accuracy && (accuracy === "good" || accuracy === "perfect") && (
           <div
             className={`accuracy-feedback accuracy-feedback--${accuracy}`}
             style={{
@@ -74,7 +74,7 @@ export const FallingNote: React.FC<FallingNoteProps> = React.memo(
             }}
           >
             <span className="accuracy-text">
-              {accuracy === "perfect" ? "✓ PERFECT!" : accuracy === "good" ? "✓ GOOD!" : "✗ MISS"}
+              {accuracy === "perfect" ? "✓ PERFECT!" : "✓ GOOD!"}
             </span>
           </div>
         )}
