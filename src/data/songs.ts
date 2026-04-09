@@ -76,7 +76,7 @@ export const SONGS: Song[] = [
   {
     id: "happy_birthday",
     title: "Happy Birthday",
-    tempo: 140,
+    tempo: 90,
     events: [
       // phrase 1
       { time: 0, note: "G4", dur: 0.75 },

@@ -31,6 +31,8 @@ const calculateVelocity = (
 export const useTouchHandler = ({ onNoteStart, onNoteEnd }: UseTouchHandlerProps) => {
   // Track active touches to support multi-touch
   const activeTouchesRef = useRef<Map<number, TouchState>>(new Map());
+  // Track touches that are being released to prevent spurious onNoteStart during lift-off
+  const releasingTouchesRef = useRef<Set<number>>(new Set());
 
   // Get note info from element
   const getNoteFromElement = (element: Element | null): string | null => {
@@ -72,6 +74,11 @@ export const useTouchHandler = ({ onNoteStart, onNoteEnd }: UseTouchHandlerProps
     const touches = e.changedTouches;
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
+      // Skip if this touch is being released
+      if (releasingTouchesRef.current.has(touch.identifier)) {
+        continue;
+      }
+      
       const element = document.elementFromPoint(touch.clientX, touch.clientY);
       const newNote = getNoteFromElement(element);
       const touchState = activeTouchesRef.current.get(touch.identifier);
@@ -111,12 +118,21 @@ export const useTouchHandler = ({ onNoteStart, onNoteEnd }: UseTouchHandlerProps
     const touches = e.changedTouches;
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
+      // Mark as releasing to prevent spurious onNoteStart during lift-off
+      releasingTouchesRef.current.add(touch.identifier);
+      
       const touchState = activeTouchesRef.current.get(touch.identifier);
       
       if (touchState) {
         onNoteEnd(touchState.note);
         activeTouchesRef.current.delete(touch.identifier);
       }
+      
+      // Clean up the releasing flag after a short delay to account for any
+      // remaining touch events that might be in the queue
+      setTimeout(() => {
+        releasingTouchesRef.current.delete(touch.identifier);
+      }, 50);
     }
   }, [onNoteEnd]);
 
