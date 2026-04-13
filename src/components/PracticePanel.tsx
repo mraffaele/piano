@@ -39,14 +39,19 @@ export const PracticePanel: React.FC<PracticePanelProps> = ({ onPlayNote, onStop
 
     const schedule = () => {
       const song = SONGS.find((s) => s.id === selectedSongId) || SONGS[0];
-      const events = song.events;
+      // Use song's startTime if set, otherwise start from 0
+      const effectiveStartTime = song.startTime ?? 0;
+      // Filter events to only those at or after the start time
+      const events = song.events.filter((e) => e.time >= effectiveStartTime);
       const tempo = song.tempo * DIFFICULTY_TEMPO_SCALE[difficulty];
       const beatSecondsLocal = 60 / tempo;
       const FALL_MS = 1800; // visual fall duration in ms
       const START_DELAY_MS = 1800; // give animations a short lead-in so first note doesn't rush
 
        events.forEach((e) => {
-         const whenMs = e.time * beatSecondsLocal * 1000 + START_DELAY_MS;
+         // Adjust time relative to the start time offset
+         const adjustedTime = e.time - effectiveStartTime;
+         const whenMs = adjustedTime * beatSecondsLocal * 1000 + START_DELAY_MS;
          // schedule visual start so the falling note has time to animate and
          // land at the play time. If the note is too close, shorten duration.
          const visualDuration = Math.min(FALL_MS, whenMs);
@@ -99,22 +104,22 @@ export const PracticePanel: React.FC<PracticePanelProps> = ({ onPlayNote, onStop
           if (onStopNote) onStopNote(e.note);
         }, stopTime);
         timeoutsRef.current.push(stopId);
-      });
+       });
 
-      // End of sequence
-      const totalBeats = Math.max(
-        ...events.map((ev) => ev.time + ev.dur),
-      );
-      const endMs = totalBeats * beatSecondsLocal * 1000 + START_DELAY_MS;
-      const endId = window.setTimeout(() => {
-        if (loop) {
-          clearScheduled();
-          schedule();
-        } else {
-          setPlaying(false);
-        }
-      }, endMs + 20);
-      timeoutsRef.current.push(endId);
+       // End of sequence
+       const totalBeats = Math.max(
+         ...events.map((ev) => ev.time - effectiveStartTime + ev.dur),
+       );
+       const endMs = totalBeats * beatSecondsLocal * 1000 + START_DELAY_MS;
+       const endId = window.setTimeout(() => {
+         if (loop) {
+           clearScheduled();
+           schedule();
+         } else {
+           setPlaying(false);
+         }
+       }, endMs + 20);
+       timeoutsRef.current.push(endId);
     };
 
     schedule();

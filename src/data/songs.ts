@@ -11,6 +11,7 @@ export interface Song {
   title: string;
   tempo: number; // bpm
   events: SongEvent[];
+  startTime?: number; // optional beat offset to start from (default 0)
 }
 
 export const SONGS: Song[] = [
@@ -222,8 +223,9 @@ export const SONGS: Song[] = [
     id: "golden",
     title: "Golden",
     tempo: 120,
+    startTime: 0,
     events: [
-      { time: 0, note: "E4", dur: 1 },
+      // { time: 0, note: "E4", dur: 1 },
       { time: 1, note: "G4", dur: 1 },
       { time: 2, note: "C5", dur: 1 },
       { time: 3, note: "B4", dur: 1 },
@@ -249,6 +251,84 @@ export const SONGS: Song[] = [
       { time: 23, note: "F#4", dur: 1 },
       { time: 24, note: "A4", dur: 1 },
       { time: 25, note: "D5", dur: 3 },
+
+      { time: 28, note: "B4", dur: 0.5 },
+      { time: 28.5, note: "B4", dur: 1 },
+      { time: 29.5, note: "E5", dur: 0.5 },
+      { time: 30, note: "E5", dur: 1.5 },
+      { time: 31.5, note: "E5", dur: 1.5 },
+      { time: 33, note: "E5", dur: 1 },
+      { time: 34, note: "B4", dur: 0.5 },
+      { time: 34.5, note: "B4", dur: 1 },
+      { time: 35.5, note: "D5", dur: 0.5 },
+      { time: 36, note: "D5", dur: 1 },
+      { time: 37, note: "B4", dur: 0.5 },
+      //
+      { time: 38.5, note: "D5", dur: 0.5 },
+      { time: 39, note: "D5", dur: 0.5 },
+      { time: 39.5, note: "D5", dur: 0.5 },
+      { time: 40, note: "D5", dur: 0.5 },
+      { time: 40.5, note: "C5", dur: 0.5 },
+      { time: 41, note: "C5", dur: 0.5 },
+      { time: 41.5, note: "C5", dur: 1 },
+      { time: 42.5, note: "B4", dur: 0.5 },
+      ////
+      { time: 44, note: "D5", dur: 0.5 },
+      { time: 44.5, note: "D5", dur: 0.5 },
+      { time: 45, note: "D5", dur: 0.5 },
+      { time: 45.5, note: "D5", dur: 0.5 },
+      { time: 46, note: "C5", dur: 0.5 },
+      { time: 46.5, note: "C5", dur: 0.5 },
+      { time: 47, note: "C5", dur: 1 },
+      { time: 48, note: "B4", dur: 0.5 },
+      //
+      { time: 49, note: "A4", dur: 1 },
+      { time: 50, note: "B4", dur: 1 },
+      { time: 51, note: "G4", dur: 1 },
+      { time: 52, note: "E5", dur: 1.5 },
+      { time: 53.5, note: "E5", dur: 1.5 },
+
+      { time: 55, note: "G5", dur: 1 },
+      { time: 56, note: "F#5", dur: 1 },
+      { time: 57, note: "E5", dur: 1 },
+      { time: 58, note: "D5", dur: 1.5 },
+      { time: 59.5, note: "A4", dur: 1 },
+      //
+      { time: 61.5, note: "D5", dur: 0.5 },
+      { time: 62, note: "D5", dur: 0.5 },
+      { time: 62.5, note: "D5", dur: 0.5 },
+      { time: 63, note: "D5", dur: 0.5 },
+      { time: 63.5, note: "C5", dur: 0.5 },
+      { time: 64, note: "C5", dur: 0.5 },
+      { time: 64.5, note: "C5", dur: 1 },
+      { time: 65.5, note: "B4", dur: 0.5 },
+      //
+      { time: 67.5, note: "D5", dur: 0.5 },
+      { time: 68, note: "D5", dur: 0.5 },
+      { time: 68.5, note: "D5", dur: 0.5 },
+      { time: 69, note: "D5", dur: 0.5 },
+      { time: 69.5, note: "C5", dur: 0.5 },
+      { time: 70, note: "C5", dur: 0.5 },
+      { time: 70.5, note: "C5", dur: 1 },
+      { time: 71.5, note: "B4", dur: 0.5 },
+      //
+      { time: 73.5, note: "A4", dur: 1 },
+      { time: 74.5, note: "B4", dur: 1 },
+      { time: 75.5, note: "G4", dur: 1 },
+      { time: 76.5, note: "E4", dur: 1.5 },
+      { time: 78, note: "G4", dur: 1.5 },
+      { time: 79.5, note: "C5", dur: 1.5 },
+      { time: 81, note: "B4", dur: 1.5 },
+      { time: 82.5, note: "D4", dur: 1.5 },
+      { time: 84, note: "F#4", dur: 1.5 },
+      { time: 85.5, note: "E5", dur: 1.5 },
+      { time: 87, note: "D5", dur: 1.5 },
+      //
+      { time: 88.5, note: "G4", dur: 1.5 },
+      { time: 90, note: "B4", dur: 1.5 },
+      { time: 91.5, note: "A5", dur: 1.5 },
+      { time: 93, note: "F#5", dur: 1.5 },
+      { time: 94.5, note: "G5", dur: 2.5 },
       //https://www.youtube.com/watch?v=I--jlP8PO-U&list=RDI--jlP8PO-U&start_radio=1
     ],
   },
