@@ -225,7 +225,7 @@ export const SONGS: Song[] = [
     tempo: 120,
     startTime: 0,
     events: [
-      // { time: 0, note: "E4", dur: 1 },
+      { time: 0, note: "E4", dur: 1 },
       { time: 1, note: "G4", dur: 1 },
       { time: 2, note: "C5", dur: 1 },
       { time: 3, note: "B4", dur: 1 },
@@ -330,6 +330,57 @@ export const SONGS: Song[] = [
       { time: 93, note: "F#5", dur: 1.5 },
       { time: 94.5, note: "G5", dur: 2.5 },
       //https://www.youtube.com/watch?v=I--jlP8PO-U&list=RDI--jlP8PO-U&start_radio=1
+    ],
+  },
+  {
+    id: "spider",
+    title: "Spiderman",
+    tempo: 160,
+    startTime: 0,
+    events: [
+      { time: 0, note: "D5", dur: 1 },
+      { time: 1, note: "F5", dur: 0.5 },
+      { time: 1.5, note: "A5", dur: 2 },
+      { time: 4, note: "G#5", dur: 1 },
+      { time: 5, note: "F5", dur: 0.5 },
+      { time: 5.5, note: "D5", dur: 2 },
+
+      { time: 9, note: "D5", dur: 1 },
+      { time: 10, note: "F5", dur: 1 },
+      { time: 11, note: "A5", dur: 1 },
+      { time: 12, note: "A#5", dur: 0.5 },
+      { time: 12.5, note: "A5", dur: 1 },
+      { time: 13.5, note: "G#5", dur: 0.5 },
+      { time: 14, note: "F5", dur: 1 },
+      { time: 15, note: "D5", dur: 1 },
+
+      // Continuation – "Spins a web, any size"
+      { time: 16, note: "D5", dur: 1 },
+      { time: 17, note: "F5", dur: 0.5 },
+      { time: 17.5, note: "A5", dur: 2 },
+      { time: 20, note: "G#5", dur: 1 },
+      { time: 21, note: "F5", dur: 0.5 },
+      { time: 21.5, note: "D5", dur: 2 },
+
+      // "Catches thieves just like flies"
+      { time: 25, note: "D5", dur: 1 },
+      { time: 26, note: "F5", dur: 1 },
+      { time: 27, note: "A5", dur: 1 },
+      { time: 28, note: "A#5", dur: 0.5 },
+      { time: 28.5, note: "A5", dur: 1 },
+      { time: 29.5, note: "G#5", dur: 0.5 },
+      { time: 30, note: "F5", dur: 1 },
+      { time: 31, note: "D5", dur: 1 },
+
+      // "Look out! Here comes the Spid er-Man!" (big dramatic finish)
+      { time: 32, note: "A#5", dur: 0.5 },
+      { time: 33, note: "A5", dur: 3 },
+      { time: 36, note: "G#5", dur: 0.5 },
+      { time: 36.5, note: "G5", dur: 1 },
+      { time: 37.5, note: "F5", dur: 0.5 },
+      { time: 38, note: "G5", dur: 1 },
+      { time: 39, note: "F5", dur: 1 },
+      { time: 40, note: "D5", dur: 2 },
     ],
   },
 ];
